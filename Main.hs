@@ -6,7 +6,7 @@ import Data.Text.IO as Text.IO (putStrLn)
 import Data.Monoid ((<>))
 
 runSh :: Text -> IO (ExitCode, Text, Text)
-runSh x' = shellStrictWithErr ("git rev-list -- " <> x') empty
+runSh x' = shellStrictWithErr ("git rev-list HEAD -- " <> x') empty
 
 main :: IO ()
 main = do
