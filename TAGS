@@ -1,9 +1,17 @@
 
-./Main.hs,68
-runSh runSh7,8
-runSh runSh8,9
-main main10,11
-main main11,12
+./Main.hs,376
+exitCodeToEither exitCodeToEither15,16
+exitCodeToEither exitCodeToEither16,17
+runSh runSh20,21
+runSh runSh21,22
+gitCheckout gitCheckout23,24
+gitCheckout gitCheckout24,25
+gitPathCommitHash gitPathCommitHash28,29
+gitPathCommitHash gitPathCommitHash29,30
+compileSection compileSection37,38
+compileSection compileSection38,39
+main main48,49
+main main49,50
 
 ./Setup.hs,15
 main main1,2
