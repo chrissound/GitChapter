@@ -28,5 +28,10 @@ executable app
                       , string-conversions
                       , filepath
                       , system-filepath
+                      , mustache
+                      , parsec
+                      , mtl
+                      , directory
+                      , regex-posix
   -- hs-source-dirs:      
   default-language:    Haskell2010

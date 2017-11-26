@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS -Wno-unused-imports #-}
 {-# OPTIONS -Wno-unused-matches #-}
+{-# OPTIONS -Wno-type-defaults #-}
+{-# LANGUAGE LambdaCase #-}
 
 import Turtle hiding (f, e, x, o, s)
 --import Filesystem.Path.CurrentOS ( FilePath(FilePath) )
@@ -12,45 +14,46 @@ import System.Posix.Directory
 import qualified Control.Foldl as Fold
 import Data.String.Conversions
 import Filesystem.Path.CurrentOS (encodeString, fromText)
+import Render
+import Text.Mustache
+import Data.Bool
+import System.Directory
+import Data.Text (splitOn)
+import Section
+import Git
+import Text.Regex.Posix
 
-exitCodeToEither :: String -> ExitCode  -> Either String ()
-exitCodeToEither m e = case e of
-  ExitSuccess -> Right ()
-  _ -> Left m
+rmIfExists :: Turtle.FilePath -> IO ()
+rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
 
-runSh :: Text -> IO (ExitCode, Text, Text)
-runSh x = shellStrictWithErr x empty
+getSectionFilenameParts :: Text -> [Text]
+getSectionFilenameParts = splitOn "_" . convertString
 
-gitCheckout :: Text -> Text -> IO (ExitCode)
-gitCheckout c p = do
-  (r, _, _) <- runSh $ "git checkout " <> c <> " -- " <> p
-  return r
-
-gitPathCommitHash :: Text -> IO (Maybe Text)
-gitPathCommitHash x = do
-  (r, o, _) <- runSh $ "git rev-list HEAD -- " <> x
-  case (r) of
-    ExitSuccess -> case (headMay $ lines o) of
-      Nothing -> return $ Nothing
-      v' -> return $ v'
-    _ -> return Nothing
-
-compileSection :: Text -> IO (Either String Text)
-compileSection filePrefix = do
-  let v = find (prefix $ fromString $ dir ++ convertString filePrefix) (fromString dir)
-        where
-          dir = "sections/"
-  fP <- fold (v) Fold.head
-  case fP of
-    Just fP' -> do
-      return $ Right $ convertString $ encodeString $ fP'
-    Nothing -> return $ Left "Nope"
+getIndexFromSectionFilepath :: String -> String
+getIndexFromSectionFilepath x = do
+  let (_,_,_,[v]) = x =~ ("sections/(.*)_" :: String) :: (String, String, String, [String])
+  v
 
 main :: IO ()
 main = do
-  changeWorkingDirectory "/home/chris/Projects/Haskell/Articles/Rainbox"
-  let counter = "0"
-  compileSection (counter <> "_") >>= (\z -> case z of
-    Left e -> print e
-    Right r -> putStrLn $ convertString r
-    )
+  cd "/home/chris/Projects/Haskell/Articles/Rainbox"
+  gitLsFiles "sections/" >>= \case
+    Nothing -> error "Unable to find files in sections/"
+    Just sections -> do
+      case traverse (\v -> if (length (getSectionFilenameParts . convertString $ v) >= 2) then Just v else Nothing) sections of
+        Nothing -> error "Not all files in sections/ are valid filenames"
+        Just sectionFiles -> do
+          putStrLn "Section files found:"
+          print sectionFiles
+          let sectionFileIndexs = read . getIndexFromSectionFilepath <$> sectionFiles :: [Int]
+          rmIfExists $ fromString compiledOutput
+          mapM_
+            (\counter -> compileSection ((convertString $ show counter) <> "_") >>= (\z -> case z of
+              Left e -> print e
+              Right r -> do
+                putStrLn $ "Compiled section : " ++ show counter
+                putStrLn $ convertString r
+              )) sectionFileIndexs
+
+boolFlip :: a -> a -> Bool -> a
+boolFlip = flip bool

@@ -1,17 +1,62 @@
 
-./Main.hs,376
-exitCodeToEither exitCodeToEither15,16
-exitCodeToEither exitCodeToEither16,17
-runSh runSh20,21
-runSh runSh21,22
+./Render.hs,902
+module Render Render4,5
+type FileLineRange FileLineRange22,23
+data FileReference FileReference23,24
+data FileReference = FileReference FileReference23,24
+data PossibleTag PossibleTag24,25
+data PossibleTag = PossibleTag PossibleTag24,25
+slice slice26,27
+slice slice27,28
+fileReferenceContent fileReferenceContent29,30
+fileReferenceContent fileReferenceContent30,31
+renderMustacheTemplate renderMustacheTemplate38,39
+renderMustacheTemplate renderMustacheTemplate39,40
+renderTemplate renderTemplate43,44
+renderTemplate renderTemplate44,45
+parseLine parseLine51,52
+parseLine parseLine52,53
+printString printString64,65
+printString printString65,66
+parseFileReference parseFileReference68,69
+parseFileReference parseFileReference69,70
+parsePossibleTag parsePossibleTag77,78
+parsePossibleTag parsePossibleTag78,79
+return2x return2x83,84
+return2x return2x84,85
+
+./Section.hs,176
+module Section Section3,4
+compileSection compileSection23,24
+compileSection compileSection24,25
+compiledOutput compiledOutput49,50
+compiledOutput compiledOutput50,51
+
+./Operations.hs,34
+module Operations Operations0,1
+
+./Git.hs,264
+module Git Git5,6
 gitCheckout gitCheckout23,24
 gitCheckout gitCheckout24,25
 gitPathCommitHash gitPathCommitHash28,29
 gitPathCommitHash gitPathCommitHash29,30
-compileSection compileSection37,38
-compileSection compileSection38,39
-main main48,49
-main main49,50
+runSh runSh37,38
+runSh runSh38,39
+gitLsFiles gitLsFiles45,46
+gitLsFiles gitLsFiles46,47
+
+./Main.hs,378
+rmIfExists rmIfExists25,26
+rmIfExists rmIfExists26,27
+getSectionFilenameParts getSectionFilenameParts28,29
+getSectionFilenameParts getSectionFilenameParts29,30
+getIndexFromSectionFilepath getIndexFromSectionFilepath31,32
+getIndexFromSectionFilepath getIndexFromSectionFilepath32,33
+main main36,37
+main main37,38
+boolFlip boolFlip57,58
+boolFlip boolFlip58,59
 
 ./Setup.hs,15
 main main1,2
