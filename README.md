@@ -1,11 +1,10 @@
-# Cabal Stack Awesome Init
+# Hart
 
 ## What problem does this solve?
-Saves having to go through the tedious `cabal init` and adding a `.ghci file` to show all warnings.
+Makes it easy to write technical article  while including files as annotations.
 
 ## Instructions
-Git clone this project, and run the following command (you'll need to modify the source and destination):
+Change the hardcoded path `"/home/chris/Projects/Haskell/Articles/Rainbox"` and change it to a directory that follows the appropriate structure. TODO: Show example of appropriate structure
 
-`rsync -av --progress ~/Projects/Haskell/CabalInit/ /path/To/Directory --exclude .git`
-
-You can use the the `ghcid.sh` script to start a ghcid session. 
+## Limitations
+It's still a bit hacky but it appears to be working fine. The actual functionality is quite simple.
