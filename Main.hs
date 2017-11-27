@@ -4,7 +4,7 @@
 {-# OPTIONS -Wno-type-defaults #-}
 {-# LANGUAGE LambdaCase #-}
 
-import Turtle hiding (f, e, x, o, s)
+import Turtle hiding (f, e, x, o, s, header)
 --import Filesystem.Path.CurrentOS ( FilePath(FilePath) )
 import Data.Text (Text, lines)
 import Data.Monoid ((<>))
@@ -22,21 +22,12 @@ import Data.Text (splitOn)
 import Section
 import Git
 import Text.Regex.Posix
+import Options.Applicative
 
-rmIfExists :: Turtle.FilePath -> IO ()
-rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
 
-getSectionFilenameParts :: Text -> [Text]
-getSectionFilenameParts = splitOn "_" . convertString
-
-getIndexFromSectionFilepath :: String -> String
-getIndexFromSectionFilepath x = do
-  let (_,_,_,[v]) = x =~ ("sections/(.*)_" :: String) :: (String, String, String, [String])
-  v
-
-main :: IO ()
-main = do
-  cd "/home/chris/Projects/Haskell/Articles/Rainbox"
+work :: String -> IO ()
+work x = do
+  cd $ fromString x
   gitLsFiles "sections/" >>= \case
     Nothing -> error "Unable to find files in sections/"
     Just sections -> do
@@ -54,6 +45,34 @@ main = do
                 putStrLn $ "Compiled section : " ++ show counter
                 putStrLn $ convertString r
               )) sectionFileIndexs
+
+
+rmIfExists :: Turtle.FilePath -> IO ()
+rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
+
+getSectionFilenameParts :: Text -> [Text]
+getSectionFilenameParts = splitOn "_" . convertString
+
+getIndexFromSectionFilepath :: String -> String
+getIndexFromSectionFilepath x = do
+  let (_,_,_,[v]) = x =~ ("sections/(.*)_" :: String) :: (String, String, String, [String])
+  v
+
+main :: IO ()
+main = join . customExecParser (prefs showHelpOnError) $
+  info (helper <*> parser)
+  (  fullDesc
+  <> header "Hart compiler"
+  )
+  where
+    parser :: Parser (IO ())
+    parser =
+      work
+        <$> argument str
+            (  metavar "STRING"
+            <> help "the directory of the article project"
+            )
+
 
 boolFlip :: a -> a -> Bool -> a
 boolFlip = flip bool

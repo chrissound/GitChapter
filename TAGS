@@ -46,17 +46,19 @@ runSh runSh38,39
 gitLsFiles gitLsFiles45,46
 gitLsFiles gitLsFiles46,47
 
-./Main.hs,378
-rmIfExists rmIfExists25,26
-rmIfExists rmIfExists26,27
-getSectionFilenameParts getSectionFilenameParts28,29
-getSectionFilenameParts getSectionFilenameParts29,30
-getIndexFromSectionFilepath getIndexFromSectionFilepath31,32
-getIndexFromSectionFilepath getIndexFromSectionFilepath32,33
-main main36,37
-main main37,38
-boolFlip boolFlip57,58
-boolFlip boolFlip58,59
+./Main.hs,412
+work work27,28
+work work28,29
+rmIfExists rmIfExists49,50
+rmIfExists rmIfExists50,51
+getSectionFilenameParts getSectionFilenameParts52,53
+getSectionFilenameParts getSectionFilenameParts53,54
+getIndexFromSectionFilepath getIndexFromSectionFilepath55,56
+getIndexFromSectionFilepath getIndexFromSectionFilepath56,57
+main main60,61
+main main61,62
+boolFlip boolFlip76,77
+boolFlip boolFlip77,78
 
 ./Setup.hs,15
 main main1,2
