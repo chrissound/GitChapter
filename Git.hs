@@ -28,7 +28,7 @@ gitCheckout c p = do
 
 gitPathCommitHash :: Text -> IO (Maybe Text)
 gitPathCommitHash x = do
-  (r, o, _) <- runSh $ "git rev-list HEAD -- " <> x
+  (r, o, _) <- runSh $ "git rev-list HEAD -- \"" <> x <> "\""
   case (r) of
     ExitSuccess -> case (headMay $ lines o) of
       Nothing -> return $ Nothing
@@ -39,7 +39,11 @@ runSh :: Text -> IO (ExitCode, Text, Text)
 runSh x = do
   putStrLn "Running command: "
   putStrLn $ "  " ++ convertString x
-  shellStrictWithErr x empty
+  (r,o,e) <- shellStrictWithErr x empty
+  print r
+  print o
+  print e
+  return (r,o,e)
 
 
 

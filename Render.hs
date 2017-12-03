@@ -56,7 +56,7 @@ parseLine x = do
     Right z -> do
       print z
       fileReferenceContent z >>= \case
-        Just v' -> return2x $ "```\n" <> v' <> "````"
+        Just v' -> return2x $ "```\n" <> v' <> "```"
         Nothing -> return $ Left "Unable to parse"
     Left _ -> case parse (parsePossibleTag) "possible tag" xStr of
         Right _ -> return $ Left $ "Tag that failed to match: " ++ xStr
