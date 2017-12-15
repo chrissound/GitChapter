@@ -34,5 +34,6 @@ executable app
                       , directory
                       , regex-posix
                       , optparse-applicative
+                      , extra
   -- hs-source-dirs:      
   default-language:    Haskell2010
