@@ -5,7 +5,7 @@ module Section where
 
 import Turtle hiding (f, e, x, o, s)
 --import Filesystem.Path.CurrentOS ( FilePath(FilePath) )
-import Data.Text (Text, lines)
+import Data.Text as T (Text, lines, unlines)
 import Data.Monoid ((<>))
 import Prelude hiding (lines)
 import Safe
@@ -37,11 +37,15 @@ compileSection filePrefix = do
           case z of
             ExitSuccess -> do
               sContent <- readTextFile fP'
-              rendered <- renderTemplate sContent
-              case rendered of
-                Right r -> do
-                  appendFile compiledOutput $ convertString r
-                  return $ Right "Success compilation"
+              let preRendered = renderTemplate sContent
+              case preRendered of
+                Right rendered -> do
+                  r <- (fmap . fmap) T.unlines (sequence <$> traverse compilePreOutput rendered)
+                  case r of
+                    Right x -> do
+                      appendFile compiledOutput $ cs x
+                      return $ Right "Success compilation"
+                    Left x -> error x
                 Left e -> return $ Left e
             _ -> return $ Left ":("
         Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fP''

@@ -30,7 +30,9 @@ data FileReference = FileReference String FileLineRange deriving Show
 data GitDiffReference = GitDiffReference Text deriving Show
 data PossibleTag = PossibleTag String deriving Show
 
-data Reference = FileRef FileReference | GitRef GitDiffReference
+data Reference = FileRef FileReference | GitRef GitDiffReference | PossibleRef PossibleTag
+
+data PreLineOutput = Raw Text | RefOutput Reference
 
 slice :: Int -> Int -> [a] -> [a]
 slice from to xs = take (to - from + 1) (drop from xs)
@@ -50,26 +52,34 @@ gitDiffReferenceContent (GitDiffReference p) = do
       Right _ -> gitDiff $ cs p
       Left (_) -> return $ Nothing
 
+prepareLineOutput :: Text -> PreLineOutput
+prepareLineOutput l = case parseLine l of
+  Nothing -> Raw l
+  Just x -> RefOutput x
 
-renderTemplate :: Text -> IO (Either String Text)
+compilePreOutput :: PreLineOutput -> IO (Either String Text)
+compilePreOutput (Raw x) = return $ Right x
+compilePreOutput (RefOutput (FileRef x)) = maybeToEither "" <$> fileReferenceContent x
+compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
+compilePreOutput (RefOutput (PossibleRef _)) = return $ Left "derp"
+
+renderTemplate :: Text -> Either String [PreLineOutput]
 renderTemplate x = do
-  let l = Data.Text.lines x
-  parsedLines <- mapM parseLine l
-  case sequence parsedLines of
-    Right v -> return $ Right $ Data.Text.unlines $ v
-    Left v -> return $ Left v
+  let lns = Data.Text.lines x
+  let possibleRefs = filter (\z -> case z of; Just (PossibleRef _) -> True; _ -> False) $ parseLine <$> lns
+  case possibleRefs of
+    [] -> Right $ prepareLineOutput <$> lns
+    (_:_) -> Left "derp"
+  -- turn nothing into normal line
 
-parseLine :: Text -> IO (Either String Text)
+parseLine :: Text -> Maybe Reference
 parseLine x = do
   let xStr = convertString x :: String
-  let result = asum [
-          fileRef <$> parse' parseFileReference "file reference" xStr
-        , gitDiff' <$> parse' parseGitDiffReference "git diff tag" xStr
-        , possibleTag xStr <$ (parse' (parsePossibleTag) "possible tag" $ xStr)
+  asum [
+          FileRef <$> parse' parseFileReference "file reference" xStr
+        , GitRef <$> parse' parseGitDiffReference "git diff tag" xStr
+        , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
-  maybe (return2x x) id result
-  where
-    possibleTag xStr = return (Left $ "Tag that failed to match: " ++ xStr)
 
 gitDiff' :: GitDiffReference -> IO (Either String Text)
 gitDiff' (GitDiffReference z) = do
