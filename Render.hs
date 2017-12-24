@@ -1,13 +1,11 @@
-{-# OPTIONS -Wno-unused-imports #-}
+--{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Render where
 
 import Prelude hiding (readFile)
-import Text.Mustache (compileTemplate, substituteValue)
 import Data.Text (Text, lines, unlines)
-import Text.Mustache.Types (Value)
 import Data.String.Conversions
 import Data.Text.Lazy.IO
 import Data.Text.Lazy (toStrict)
@@ -15,9 +13,8 @@ import Control.Monad.Trans
 
 import Text.Parsec
 import Text.Parsec.String
-import Text.Parsec ((<?>))
 --import Control.Applicative
-import Control.Monad.Identity (Identity, guard)
+import Control.Monad.Identity (guard)
 import Control.Exception as Excp
 import System.IO.Error
 import Data.Either.Extra
@@ -57,9 +54,9 @@ prepareLineOutput l = case parseLine l of
   Nothing -> Raw l
   Just x -> RefOutput x
 
-compilePreOutput :: PreLineOutput -> IO (Either String Text)
+compilePreOutput :: PreLineOutput -> Hart (Either String Text)
 compilePreOutput (Raw x) = return $ Right x
-compilePreOutput (RefOutput (FileRef x)) = maybeToEither "" <$> fileReferenceContent x
+compilePreOutput (RefOutput (FileRef x)) = lift $ maybeToEither "" <$> fileReferenceContent x
 compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
 compilePreOutput (RefOutput (PossibleRef _)) = return $ Left "derp"
 
@@ -81,10 +78,9 @@ parseLine x = do
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
 
-gitDiff' :: GitDiffReference -> IO (Either String Text)
+gitDiff' :: GitDiffReference -> Hart (Either String Text)
 gitDiff' (GitDiffReference z) = do
-  let  hc = HartConfig "test" "test" 0
-  v' <- (runReaderT . gitDiff $ z) hc :: IO (Maybe Text)
+  v' <- gitDiff $ z
   return . maybeToEither "Unable to retrieve git diff" $ surroundBackTicks <$> v'
 
 fileRef :: FileReference -> IO (Either String Text)

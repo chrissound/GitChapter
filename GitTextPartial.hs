@@ -15,5 +15,5 @@ gitDiff x = do
   case (r) of
     ExitSuccess -> case (headMay $ lines o) of
       Nothing -> return $ Nothing
-      v' -> return $ v'
+      _ -> return $ Just o
     _ -> return Nothing

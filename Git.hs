@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS -Wno-unused-imports #-}
-{-# OPTIONS -Wno-unused-matches #-}
+--{-# OPTIONS -Wno-unused-imports #-}
+--{-# OPTIONS -Wno-unused-matches #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Git
@@ -14,17 +14,8 @@ import Data.Text (Text, lines)
 import Data.Monoid ((<>))
 import Prelude hiding (lines)
 import Safe
-import System.Posix.Directory
-import qualified Control.Foldl as Fold
 import Data.String.Conversions
-import Filesystem.Path.CurrentOS (encodeString, fromText)
-import Text.Mustache
-import Data.Bool
-import System.Directory
-import Data.Text (splitOn)
 import Hart
-import Control.Monad.Trans
-import Control.Monad.Trans.Reader
 import GitTextPartial
 
 gitCheckout :: Text -> Text -> IO (ExitCode)
