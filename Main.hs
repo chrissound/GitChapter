@@ -32,7 +32,9 @@ work x = do
           rmIfExists $ fromString compiledOutput
           mapM_
             (\counter -> compileSection ((convertString $ show counter) <> "_") >>= (\z -> case z of
-              Left e -> print e
+              Left e -> do
+                putStrLn $ "Error compiling section: "  ++ show counter
+                error e
               Right r -> do
                 putStrLn $ "Compiled section : " ++ show counter
                 putStrLn $ convertString r

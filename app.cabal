@@ -28,11 +28,11 @@ executable app
                       , string-conversions
                       , filepath
                       , system-filepath
-                      , mustache
                       , parsec
                       , mtl
                       , directory
                       , regex-posix
+                      , regex-pcre
                       , optparse-applicative
                       , extra
                       , transformers

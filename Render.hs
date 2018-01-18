@@ -10,6 +10,8 @@ import Data.String.Conversions
 import Data.Text.Lazy.IO
 import Data.Text.Lazy (toStrict)
 import Control.Monad.Trans
+import Turtle (ExitCode(..))
+import Text.Printf
 
 import Text.Parsec
 import Text.Parsec.String
@@ -25,10 +27,10 @@ import Hart
 type FileLineRange = Maybe(Int, Int)
 data FileReference = FileReference String FileLineRange deriving Show
 data GitDiffReference = GitDiffReference Text deriving Show
+data ShellOutput = ShellOutput Text deriving Show
 data PossibleTag = PossibleTag String deriving Show
 
-data Reference = FileRef FileReference | GitRef GitDiffReference | PossibleRef PossibleTag
-
+data Reference = FileRef FileReference | GitRef GitDiffReference | PossibleRef PossibleTag | ShellOutputRef ShellOutput
 data PreLineOutput = Raw Text | RefOutput Reference
 
 slice :: Int -> Int -> [a] -> [a]
@@ -43,12 +45,6 @@ fileReferenceContent (FileReference p flRange) =
         Nothing -> return $ Just $ toStrict v
     Left (_) -> return $ Nothing
 
-gitDiffReferenceContent :: GitDiffReference  -> Hart (Maybe Text)
-gitDiffReferenceContent (GitDiffReference p) = do
-    (lift . Excp.tryJust (guard . isDoesNotExistError) $ readFile $ cs p) >>= \case
-      Right _ -> gitDiff $ cs p
-      Left (_) -> return $ Nothing
-
 prepareLineOutput :: Text -> PreLineOutput
 prepareLineOutput l = case parseLine l of
   Nothing -> Raw l
@@ -58,16 +54,21 @@ compilePreOutput :: PreLineOutput -> Hart (Either String Text)
 compilePreOutput (Raw x) = return $ Right x
 compilePreOutput (RefOutput (FileRef x)) = lift $ maybeToEither "" <$> fileReferenceContent x
 compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
-compilePreOutput (RefOutput (PossibleRef _)) = return $ Left "derp"
+compilePreOutput (RefOutput (ShellOutputRef (ShellOutput x))) = lift $ shellOutput x >>= return . Right
+compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found of:" ++ x)
+
+shellOutput :: Text -> IO Text
+shellOutput x = runSh x >>= \case
+  (ExitSuccess,t,_) -> return t
+  (ExitFailure n,t,e) -> return $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
 
 renderTemplate :: Text -> Either String [PreLineOutput]
 renderTemplate x = do
   let lns = Data.Text.lines x
-  let possibleRefs = filter (\z -> case z of; Just (PossibleRef _) -> True; _ -> False) $ parseLine <$> lns
-  case possibleRefs of
+  case filter (\z -> case z of; Just (PossibleRef _) -> True; _ -> False) $ parseLine <$> lns of
     [] -> Right $ prepareLineOutput <$> lns
-    (_:_) -> Left "derp"
-  -- turn nothing into normal line
+    ((Just (PossibleRef r)):_) -> Left $ show (r)
+    _ -> error "This should not be possible..."
 
 parseLine :: Text -> Maybe Reference
 parseLine x = do
@@ -75,18 +76,20 @@ parseLine x = do
   asum [
           FileRef <$> parse' parseFileReference "file reference" xStr
         , GitRef <$> parse' parseGitDiffReference "git diff tag" xStr
+        , ShellOutputRef <$> parse' parseShellOutputTag "shellOutput tag" xStr
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
 
 gitDiff' :: GitDiffReference -> Hart (Either String Text)
 gitDiff' (GitDiffReference z) = do
-  v' <- gitDiff $ z
-  return . maybeToEither "Unable to retrieve git diff" $ surroundBackTicks <$> v'
+  gitDiff z >>= \case
+    Right x -> return $ Right $ x
+    Left x -> return $ Left (printf "Unable to retrieve git diff (%s) -  %s" z (show x))
 
 fileRef :: FileReference -> IO (Either String Text)
-fileRef z = do
-  value <- maybeToEither "Unable to parse" <$> fileReferenceContent z
-  return $ surroundBackTicks <$> value
+fileRef z@(FileReference fr fr') = do
+  value <- maybeToEither (printf "Unable to retrieve file (%s %s)" fr (show fr')) <$> fileReferenceContent z
+  return $ value
 
 surroundBackTicks :: Text -> Text
 surroundBackTicks v = "```\n" <> v <> "```"
@@ -113,6 +116,12 @@ parsePossibleTag :: Parser PossibleTag
 parsePossibleTag = do
   z <- string "{{" >> manyTill anyChar (Text.Parsec.try $ string "}}")
   return $ PossibleTag z
+
+parseShellOutputTag :: Parser ShellOutput
+parseShellOutputTag = do
+  z <- string "{{{{" >> optional space >> string "shellOutput" >> space >> many (noneOf "}}}}}")
+  _ <- many (noneOf "}}}}")
+  return $ ShellOutput $ cs z
 
 return2x :: (Monad m, Monad m2) => a -> m (m2 a)
 return2x = return . return

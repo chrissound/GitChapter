@@ -3,7 +3,8 @@
 {-# OPTIONS -Wno-unused-matches #-}
 module Section where
 
-import Turtle hiding (f, e, x, o, s)
+import Text.Printf
+import Turtle hiding (f, e, x, o, s, printf)
 --import Filesystem.Path.CurrentOS ( FilePath(FilePath) )
 import Data.Text as T (Text, unlines, lines)
 import Data.Monoid ((<>))
@@ -59,13 +60,22 @@ compileSection filePrefix = do
                   r <- runReaderT ((fmap . fmap) T.unlines (sequence <$> traverse compilePreOutput rendered)) hc
                   case r of
                     Right x -> do
+                      appendFile compiledOutput $ printf "# Section %d\n" sectionKey
+                      appendFile compiledOutput $ "```\n"
+                      appendFile compiledOutput $ printf "Git From Commit: %s\n\n" cHashPrevious'
+                      appendFile compiledOutput $ printf "Git Until Commit: %s\n\n" cHash'
+                      appendFile compiledOutput $ "```\n"
                       appendFile compiledOutput $ cs x
-                      return $ Right "Success compilation"
-                    Left x -> error x
+                      return $ Right $ "Successful compilation for section " <> filePrefix
+                    Left x -> do
+                      putStrLn ("Hart compilation error!" :: String)
+                      putStrLn (printf "Occurred within section: %d" sectionKey :: String)
+                      putStrLn ( printf "Occurred within commit range of (%s - %s)" (cs cHashPrevious' :: String) (cs cHash' :: String) :: String)
+                      error x
                 Left e -> return $ Left e
             _ -> return $ Left ":("
-        (Left e, _) -> return $ Left e
-        (_, Left e) -> return $ Left e
+        (Left e, _) -> return $ Left $ "Unable to determine `from git commit` hash: " ++ e
+        (_, Left e) -> return $ Left $ "Unable to determine `until git commit` hash: " ++ e
     Nothing -> do
       print filePrefix
       error "could not read section key index"

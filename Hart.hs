@@ -9,9 +9,13 @@ import Data.Text hiding (empty)
 import Data.String.Conversions
 import Control.Monad.Trans.Reader (runReaderT, ReaderT, ask)
 import Control.Monad.Trans (lift)
-import Turtle (ExitCode, shellStrictWithErr, empty)
+import Turtle (ExitCode(..), shellStrictWithErr, empty)
 
 data HartConfig = HartConfig String String Integer
+
+hartConfigFromHash, hartConfigUntilHash :: HartConfig -> String
+hartConfigFromHash (HartConfig h _ _) = h
+hartConfigUntilHash (HartConfig _ h _) = h
 
 type Hart = ReaderT HartConfig IO
 
@@ -26,8 +30,8 @@ runSh x = do
   putStrLn "Running command: "
   putStrLn $ "  " ++ convertString x
   (r,o,e) <- shellStrictWithErr x empty
-  print r
-  print o
-  print e
+  putStrLn $ "  Return:" ++ show r
+  putStrLn $ "  Output:" ++ show o
+  putStrLn $ "  Error:" ++ show e
   return (r,o,e)
 
