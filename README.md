@@ -15,10 +15,14 @@ Section3.md / commit6
 ```
 
 
-Supported tags:
+### Supported tags:
+
 `{{sectionHeader}}` which would be `Secton x` where x is the section number
+
 `{{ gitDiff path/to/file.sh }}` which would show you a `git diff` of file relative to the section's 'parent commit'
+
 `{{ file path/to/file.sh }}` which would show you entire content of file relative to the section's 'parent commit'
+
 `{{gitCommitOffset}}` will output the seciton's commit 'range'
 
 
