@@ -14,6 +14,8 @@ Section3.md / commit6
             / commit7
 ```
 
+This also means that if you want to `amend` an old section / code, you do a git rebase, change the code and thats it (well you still need to rerun the compilation / rendering)! No need to modify anything else as the section files only store references relating to files / diffs.
+
 
 ### Supported tags / features:
 
@@ -29,7 +31,7 @@ Section3.md / commit6
 
 
 ## Limitations
-Not 100% tested - but the core functionality (secitons?) works! 
+Not 100% tested - but the core functionality (secitons?) works! Modifying 'older' sections means needing to do a git rebase on that project - which may present some difficulty if you are accepting changes (git commits) from others.
 
 ## Instructions
 Create a `sections` directory in a git repository. Create a `x_Example.md` file, where x is a 'section'. Commit this section file along with your code. 
