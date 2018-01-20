@@ -27,6 +27,7 @@ import Hart
 type FileLineRange = Maybe(Int, Int)
 data FileReference = FileReference String FileLineRange deriving Show
 data GitDiffReference = GitDiffReference Text deriving Show
+data GitCommitOffestReference = GitCommitOffestReference deriving Show
 data ShellOutput = ShellOutput Text deriving Show
 data PossibleTag = PossibleTag String deriving Show
 data SectionHeaderReference = SectionHeaderReference String String deriving Show
@@ -34,6 +35,7 @@ data SectionHeaderReference = SectionHeaderReference String String deriving Show
 data Reference =
     FileRef FileReference
   | GitRef GitDiffReference
+  | GitCommitOffestRef GitCommitOffestReference
   | PossibleRef PossibleTag
   | ShellOutputRef ShellOutput
   | SectionHeaderRef SectionHeaderReference
@@ -60,6 +62,7 @@ compilePreOutput :: PreLineOutput -> Hart (Either String Text)
 compilePreOutput (Raw x) = return $ Right x
 compilePreOutput (RefOutput (FileRef x)) = lift $ maybeToEither "" <$> fileReferenceContent x
 compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
+compilePreOutput (RefOutput (GitCommitOffestRef x)) = gitCommitRefence x
 compilePreOutput (RefOutput (ShellOutputRef (ShellOutput x))) = lift $ shellOutput x >>= return . Right
 compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found of:" ++ x)
 compilePreOutput (RefOutput (SectionHeaderRef (SectionHeaderReference prefix suffix))) = do
@@ -85,6 +88,7 @@ parseLine x = do
   asum [
           FileRef <$> parse' parseFileReference "file reference" xStr
         , GitRef <$> parse' parseGitDiffReference "git diff tag" xStr
+        , GitCommitOffestRef <$> parse' parseGitCommitOffest "git commit offset" xStr
         , ShellOutputRef <$> parse' parseShellOutputTag "shellOutput tag" xStr
         , SectionHeaderRef <$> (parse' (parseSectionHeader) "section header" $ xStr)
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
@@ -104,8 +108,23 @@ fileRef z@(FileReference fr fr') = do
 surroundBackTicks :: Text -> Text
 surroundBackTicks v = "```\n" <> v <> "```"
 
+gitCommitRefence :: GitCommitOffestReference -> Hart (Either String Text)
+gitCommitRefence (GitCommitOffestReference) = do
+  hc <- ask
+  return $ Right $ cs $ "```\n"
+    <> "Git From Commit: \n"
+    <> hartConfigFromHash hc <> "\n\n"
+    <> "Git Until Commit: \n"
+    <> hartConfigFromHash hc <> "\n"
+    <> "```"
+
 printString :: String -> IO ()
 printString = print
+
+parseGitCommitOffest :: Parser GitCommitOffestReference
+parseGitCommitOffest = do
+  _ <- string "{{" >> optional space >> string "gitCommitOffset" >> optional space >> string "}}"
+  return GitCommitOffestReference
 
 parseSectionHeader :: Parser SectionHeaderReference
 parseSectionHeader = do

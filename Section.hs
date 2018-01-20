@@ -60,11 +60,6 @@ compileSection filePrefix = do
                   r <- runReaderT ((fmap . fmap) T.unlines (sequence <$> traverse compilePreOutput rendered)) hc
                   case r of
                     Right x -> do
-                      appendFile compiledOutput $ printf "# Section %d\n" sectionKey
-                      appendFile compiledOutput $ "```\n"
-                      appendFile compiledOutput $ printf "Git From Commit: %s\n\n" cHashPrevious'
-                      appendFile compiledOutput $ printf "Git Until Commit: %s\n\n" cHash'
-                      appendFile compiledOutput $ "```\n"
                       appendFile compiledOutput $ cs x
                       return $ Right $ "Successful compilation for section " <> filePrefix
                     Left x -> do
