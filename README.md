@@ -13,4 +13,7 @@ Create a `sections` directory in a git repository. Create a `x_Example.md` file,
 
 https://github.com/chrissound/NextUpHarticle
 
+Output available at:
+https://github.com/chrissound/NextUpHarticle/blob/master/compiledArticle.md
+
 ![Screenshot](demo.jpg)
