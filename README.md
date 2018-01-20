@@ -24,6 +24,7 @@ Section3.md / commit6
 `{{ file path/to/file.sh }}` which would show you entire content of file relative to the section's 'parent commit'
 
 `{{gitCommitOffset}}` will output the seciton's commit 'range'
+`{{{{ shellOutput command goes here }}}}` which would execute `command goes here` (in your shell) and output whatever is returned.
 
 
 ## Limitations
