@@ -29,8 +29,14 @@ data FileReference = FileReference String FileLineRange deriving Show
 data GitDiffReference = GitDiffReference Text deriving Show
 data ShellOutput = ShellOutput Text deriving Show
 data PossibleTag = PossibleTag String deriving Show
+data SectionHeaderReference = SectionHeaderReference String String deriving Show
 
-data Reference = FileRef FileReference | GitRef GitDiffReference | PossibleRef PossibleTag | ShellOutputRef ShellOutput
+data Reference =
+    FileRef FileReference
+  | GitRef GitDiffReference
+  | PossibleRef PossibleTag
+  | ShellOutputRef ShellOutput
+  | SectionHeaderRef SectionHeaderReference
 data PreLineOutput = Raw Text | RefOutput Reference
 
 slice :: Int -> Int -> [a] -> [a]
@@ -56,6 +62,9 @@ compilePreOutput (RefOutput (FileRef x)) = lift $ maybeToEither "" <$> fileRefer
 compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
 compilePreOutput (RefOutput (ShellOutputRef (ShellOutput x))) = lift $ shellOutput x >>= return . Right
 compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found of:" ++ x)
+compilePreOutput (RefOutput (SectionHeaderRef (SectionHeaderReference prefix suffix))) = do
+  (HartConfig _ _ section) <- ask
+  return $ Right $ cs $ prefix ++ "Section " ++ show section ++ suffix
 
 shellOutput :: Text -> IO Text
 shellOutput x = runSh x >>= \case
@@ -77,6 +86,7 @@ parseLine x = do
           FileRef <$> parse' parseFileReference "file reference" xStr
         , GitRef <$> parse' parseGitDiffReference "git diff tag" xStr
         , ShellOutputRef <$> parse' parseShellOutputTag "shellOutput tag" xStr
+        , SectionHeaderRef <$> (parse' (parseSectionHeader) "section header" $ xStr)
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
 
@@ -96,6 +106,13 @@ surroundBackTicks v = "```\n" <> v <> "```"
 
 printString :: String -> IO ()
 printString = print
+
+parseSectionHeader :: Parser SectionHeaderReference
+parseSectionHeader = do
+  let sectionHeaderTag = string "{{" >> optional space >> string "sectionHeader" >> optional space >> string "}}"
+  s <- manyTill anyChar (Text.Parsec.try sectionHeaderTag)
+  s'' <- many anyChar
+  return $ SectionHeaderReference s s''
 
 parseFileReference :: Parser FileReference
 parseFileReference = do

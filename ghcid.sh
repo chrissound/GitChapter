@@ -1,1 +1,1 @@
-ghcid '--command=stack ghci app' --test='main'
+ghcid '--command=stack ghci app:exe:app' --test='main'

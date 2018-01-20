@@ -38,3 +38,25 @@ executable app
                       , transformers
   -- hs-source-dirs:      
   default-language:    Haskell2010
+executable testingapp
+  main-is:             Test.hs
+  build-depends:       base >=4.9 && <4.10
+                      , turtle
+                      , text
+                      , safe
+                      , unix
+                      , foldl
+                      , string-conversions
+                      , filepath
+                      , system-filepath
+                      , parsec
+                      , mtl
+                      , directory
+                      , regex-posix
+                      , regex-pcre
+                      , optparse-applicative
+                      , extra
+                      , transformers
+                      , QuickCheck
+                      , HUnit
+                  
