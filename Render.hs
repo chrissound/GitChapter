@@ -115,7 +115,7 @@ gitCommitRefence (GitCommitOffestReference) = do
     <> "Git From Commit: \n"
     <> hartConfigFromHash hc <> "\n\n"
     <> "Git Until Commit: \n"
-    <> hartConfigFromHash hc <> "\n"
+    <> hartConfigUntilHash hc <> "\n"
     <> "```"
 
 printString :: String -> IO ()
