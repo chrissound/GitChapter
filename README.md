@@ -26,7 +26,6 @@ Section3.md / commit6
 `{{gitCommitOffset}}` will output the seciton's commit 'range'
 
 
-
 ## Limitations
 Not 100% tested - but the core functionality (secitons?) works! 
 
@@ -41,3 +40,8 @@ Output available at:
 https://github.com/chrissound/NextUpHarticle/blob/master/compiledArticle.md
 
 ![Screenshot](demo.jpg)
+
+## Installation
+
+Most probably you would need to install Haskell / GHC (the Haskell compiler). You can then 'compile' a project by doing:
+`stack exec app -- /path/to/project`. It should be possible to provide a binary / docker image for this - but I'll need to figure out how to do this.
