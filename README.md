@@ -17,7 +17,9 @@ Section3.md / commit6
 This also means that if you want to `amend` an old section / code, you do a git rebase, change the code and thats it (well you still need to rerun the compilation / rendering)! No need to modify anything else as the section files only store references relating to files / diffs.
 
 
-### Supported tags / features:
+## Supported tags / features:
+
+Format agnostic - although there may be references to using markdown (.md), it should work on any type of text.
 
 `{{sectionHeader}}` which would be `Secton x` where x is the section number.
 
@@ -31,12 +33,22 @@ This also means that if you want to `amend` an old section / code, you do a git 
 
 
 ## Limitations
-Not 100% tested - but the core functionality (secitons?) works! Modifying 'older' sections means needing to do a git rebase on that project - which may present some difficulty if you are accepting changes (git commits) from others.
+Not 100% tested - but the core functionality (secitons?) works!
+- Modifying 'older' sections means needing to do a git rebase on that project - which may present some difficulty if you are accepting changes (git commits) from others.
+- There may be issues if you use text tags like `{{example}}` - there isn't any way to escape these at the moment (a quick fix would be to require additional {{{{ brackets}}}).
 
-## Instructions
-Create a `sections` directory in a git repository. Create a `x_Example.md` file, where x is a 'section'. Commit this section file along with your code. 
+## Installation
 
-## Example 'project'
+Most probably you would need to install Haskell / GHC (the Haskell compiler) + stack. It should be possible to provide a binary / docker image for this - but I'll need to investigate and test this first. 
+
+## How to use this? Instructions?
+Create a `sections` directory in a git repository. Create a `x_Example.md` file with your relevent commits, where x is a 'section' number. You can then render a project by executing:
+`stack exec app -- /path/to/project` - this will generate a `compiledArticle.md` file from all the sections.  
+
+Also using <https://github.com/jgm/pandoc> will allow you to generate HTML from markdown with a simple command like:
+`pandoc --from markdown_strict+backtick_code_blocks -s compiledArticle.md -o compiled.html`
+
+### Example 'project'
 
 https://github.com/chrissound/NextUpHarticle
 
@@ -45,7 +57,6 @@ https://github.com/chrissound/NextUpHarticle/blob/master/compiledArticle.md
 
 ![Screenshot](demo.jpg)
 
-## Installation
+## Need help?
+As this is a new project, if you hit any issues or need help setting anything up - please don't hesitate to post a github issue!  :)
 
-Most probably you would need to install Haskell / GHC (the Haskell compiler). You can then 'compile' a project by doing:
-`stack exec app -- /path/to/project`. It should be possible to provide a binary / docker image for this - but I'll need to figure out how to do this.

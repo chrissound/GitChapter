@@ -17,7 +17,12 @@ cabal-version:       >=1.10
 
 executable app
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       Git
+                    ,  GitTextPartial
+                    ,  Hart
+                    ,  Render
+                    ,  Section
+
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                       , turtle
