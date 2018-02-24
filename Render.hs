@@ -12,6 +12,7 @@ import Data.Text.Lazy (toStrict)
 import Control.Monad.Trans
 import Turtle (ExitCode(..))
 import Text.Printf
+import Safe
 
 import Text.Parsec
 import Text.Parsec.String
@@ -139,7 +140,10 @@ parseFileReference = do
   l <- optionMaybe $ string " " >> many (noneOf " ")
   l' <- optionMaybe $ string " " >> many (noneOf "}}")
   case (l, l') of
-    (Just lStart, Just lEnd) -> return $ FileReference z (Just (read lStart, read lEnd))
+    (Just lStart, Just lEnd) ->
+      case (readMay lStart, readMay lEnd) of
+        (Just lStart', Just lEnd') -> return $ FileReference z (Just (lStart', lEnd'))
+        _ -> fail "Unable to read start and end file reference"
     _ -> return $ FileReference z Nothing
 
 parseGitDiffReference :: Parser GitDiffReference

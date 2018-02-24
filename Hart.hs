@@ -27,11 +27,16 @@ a ++<> b = cs a <> cs b :: Text
 
 runSh :: Text -> IO (ExitCode, Text, Text)
 runSh x = do
-  putStrLn "Running command: "
+  putStrLn "Running external command: "
   putStrLn $ "  " ++ convertString x
   (r,o,e) <- shellStrictWithErr x empty
-  putStrLn $ "  Return:" ++ show r
-  putStrLn $ "  Output:" ++ show o
-  putStrLn $ "  Error:" ++ show e
+  putStrLn $ "  Return: " ++ show r
+  case o of
+    "" -> pure ()
+    o' -> putStrLn $ "  Output: " ++ show o'
+  case e of
+    "" -> pure ()
+    e' -> putStrLn $ "  Error: " ++ show e'
+  putStrLn $ ""
   return (r,o,e)
 

@@ -4,69 +4,74 @@
 {-# OPTIONS -Wno-type-defaults #-}
 {-# LANGUAGE LambdaCase #-}
 
-import Turtle hiding (f, e, x, o, s, header)
+import Turtle hiding (e, f, header, o, s, x)
+
+import Control.Monad
+import Data.Bool
+import Data.String.Conversions
+import Data.Text (splitOn)
+import Git
+import Options.Applicative
+import Safe
+import Section
+import System.Directory
 --import Filesystem.Path.CurrentOS ( FilePath(FilePath) )
 import System.Posix.Directory
-import Data.String.Conversions
-import Data.Bool
-import System.Directory
-import Data.Text (splitOn)
-import Section
-import Git
 import Text.Regex.Posix
-import Options.Applicative
-
 
 work :: String -> IO ()
 work x = do
   cd $ fromString x
   gitLsFiles "sections/" >>= \case
-    Nothing -> error "Unable to find files in sections/"
+    Nothing ->
+      error
+        "Have not found any relevant files within sections/ within the repository"
     Just sections -> do
-      case traverse (\v -> if (length (getSectionFilenameParts . convertString $ v) >= 2) then Just v else Nothing) sections of
-        Nothing -> error "Not all files in sections/ are valid filenames"
+      let sectionIndexes = getIndexFromSectionFilepath <$> sections
+      case (sequence $ readMay <$> sectionIndexes :: Maybe [Int]) of
+        Nothing -> do
+          error $
+            "Unable to determine indexes for all section files which are of: " ++
+            show sections
         Just sectionFiles -> do
           putStrLn "Section files found:"
-          print sectionFiles
-          let sectionFileIndexs = read . getIndexFromSectionFilepath <$> sectionFiles :: [Int]
+          putStrLn $ "  " ++ show sections
+          putStrLn ""
           rmIfExists $ fromString compiledOutput
-          mapM_
-            (\counter -> compileSection ((convertString $ show counter) <> "_") >>= (\z -> case z of
-              Left e -> do
-                putStrLn $ "Error compiling section: "  ++ show counter
-                error e
-              Right r -> do
-                putStrLn $ "Compiled section : " ++ show counter
-                putStrLn $ convertString r
-              )) sectionFileIndexs
-
+          forM_
+            sectionFiles
+            (\counter ->
+               compileSection (cs $ show counter) >>= \case
+                 Left e -> do
+                   putStrLn $ "Error compiling section: " ++ show counter
+                   error e
+                 Right r -> do
+                   putStrLn $ "Compiled section : " ++ show counter
+                   putStrLn $ convertString r)
 
 rmIfExists :: Turtle.FilePath -> IO ()
 rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
 
-getSectionFilenameParts :: Text -> [Text]
-getSectionFilenameParts = splitOn "_" . convertString
-
 getIndexFromSectionFilepath :: String -> String
 getIndexFromSectionFilepath x = do
-  let (_,_,_,[v]) = x =~ ("sections/(.*)_" :: String) :: (String, String, String, [String])
+  let (_, _, _, [v]) =
+        x =~ ("sections/(.[^_]*)_" :: String) :: ( String
+                                                 , String
+                                                 , String
+                                                 , [String])
   v
 
 main :: IO ()
-main = join . customExecParser (prefs showHelpOnError) $
-  info (helper <*> parser)
-  (  fullDesc
-  <> header "Hart compiler"
-  )
+main =
+  join . customExecParser (prefs showHelpOnError) $
+  info (helper <*> parser) (fullDesc <> header "Hart compiler")
   where
     parser :: Parser (IO ())
     parser =
-      work
-        <$> argument str
-            (  metavar "STRING"
-            <> help "the directory of the article project"
-            )
-
+      work <$>
+      argument
+        str
+        (metavar "STRING" <> help "the directory of the article project")
 
 boolFlip :: a -> a -> Bool -> a
 boolFlip = flip bool
