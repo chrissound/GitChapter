@@ -83,6 +83,14 @@ renderTemplate x = do
     ((Just (PossibleRef r)):_) -> Left $ show (r)
     _ -> error "This should not be possible..."
 
+parseLines :: String -> Maybe String
+parseLines x =
+  parse' (do
+    Text.Parsec.try (string "/*")
+    *> manyTill anyChar (Text.Parsec.try $ string "*/")
+    )
+    "" x
+
 parseLine :: Text -> Maybe Reference
 parseLine x = do
   let xStr = convertString x :: String
@@ -92,6 +100,7 @@ parseLine x = do
         , GitCommitOffestRef <$> parse' parseGitCommitOffest "git commit offset" xStr
         , ShellOutputRef <$> parse' parseShellOutputTag "shellOutput tag" xStr
         , SectionHeaderRef <$> (parse' (parseSectionHeader) "section header" $ xStr)
+        , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
 
@@ -134,17 +143,23 @@ parseSectionHeader = do
   s'' <- many anyChar
   return $ SectionHeaderReference s s''
 
+parseFileAndLimits :: Parser (String, Maybe Int, Maybe Int)
+parseFileAndLimits = do
+      l <- many (noneOf " ")
+      _ <- optional space
+      l' <- optionMaybe $ many1 digit
+      _ <- optional space
+      l'' <- optionMaybe $ many1 digit
+      _ <- optional space
+      return (l, l' >>= readMay, l'' >>= readMay)
+
 parseFileReference :: Parser FileReference
 parseFileReference = do
-  z <- string "{{" >> optional space >> string "file" >> space >> many (noneOf " ")
-  l <- optionMaybe $ string " " >> many (noneOf " ")
-  l' <- optionMaybe $ string " " >> many (noneOf "}}")
-  case (l, l') of
-    (Just lStart, Just lEnd) ->
-      case (readMay lStart, readMay lEnd) of
-        (Just lStart', Just lEnd') -> return $ FileReference z (Just (lStart', lEnd'))
-        _ -> fail "Unable to read start and end file reference"
-    _ -> return $ FileReference z Nothing
+  z <- between (string "{{" >> optional space >> string "file" >> space) (string "}}") parseFileAndLimits
+  case (z) of
+    (fPath, Just lStart, Just lEnd) -> return $ FileReference fPath (Just (lStart, lEnd))
+    (fPath, Nothing, Nothing) -> return $ FileReference fPath Nothing
+    _ -> fail "Unable to read start and end file reference"
 
 parseGitDiffReference :: Parser GitDiffReference
 parseGitDiffReference = do
