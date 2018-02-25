@@ -15,7 +15,8 @@ main = do
 
 hUnitTests :: Test
 hUnitTests = test [
-  "" ~: "" ~: True ~=? testParseSectionHeader
+    "" ~: "" ~: True ~=? testParseSectionHeader
+  , "" ~: "" ~: True ~=? testParseFileReference
   ]
 
 testParseSectionHeader :: Bool
@@ -26,3 +27,18 @@ testParseSectionHeader = do
     Right (SectionHeaderReference s s') -> (s == pfx) && (s' == sfx)
     Left e -> error $ show e
 
+
+testParseFileReference :: Bool
+testParseFileReference = do
+  let fp = "abc/xyz.123"
+  let t1 =  "{{ file "++ fp ++" }}"
+  let t2 =  "{{ file "++ fp ++" 10 20 }}"
+  let c1 = case (parse parseFileReference "fileRefTest" t1) of
+        Right (FileReference x Nothing) -> x == fp
+        Left e -> error $ show e
+        _ -> error "?"
+  let c2 = case (parse parseFileReference "fileRefTest" t2) of
+        Right (FileReference x (Just (y',y''))) -> and [x == fp, y' == 10, y'' == 20]
+        Left e -> error $ show e
+        _ -> error "?"
+  and [c1, c2]
