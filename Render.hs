@@ -1,6 +1,7 @@
 --{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Render where
 
@@ -13,8 +14,9 @@ import Control.Monad.Trans
 import Turtle (ExitCode(..))
 import Text.Printf
 import Safe
+--import System.IO.Unsafe
 
-import Text.Parsec
+import Text.Parsec hiding (parserTrace)
 import Text.Parsec.String
 --import Control.Applicative
 import Control.Monad.Identity (guard)
@@ -83,13 +85,6 @@ renderTemplate x = do
     ((Just (PossibleRef r)):_) -> Left $ show (r)
     _ -> error "This should not be possible..."
 
-parseLines :: String -> Maybe String
-parseLines x =
-  parse' (do
-    Text.Parsec.try (string "/*")
-    *> manyTill anyChar (Text.Parsec.try $ string "*/")
-    )
-    "" x
 
 parseLine :: Text -> Maybe Reference
 parseLine x = do
@@ -175,11 +170,51 @@ parsePossibleTag = do
 parseShellOutputTag :: Parser ShellOutput
 parseShellOutputTag = do
   z <- string "{{{{" >> optional space >> string "shellOutput" >> space >> many (noneOf "}}}}}")
-  _ <- many (noneOf "}}}}")
+  _ <- string "}}}"
   return $ ShellOutput $ cs z
+
+parseGhciTag :: Parser String
+parseGhciTag = do
+  parserTrace "DEBUG INIT parseGhciTag"
+  z <- string "{{{" >> optional space >> string "ghci" >> optional space >> many (noneOf "}}}")
+  _ <- string "}}}"
+  parserTrace "DEBUG SUCCESS parseGhciTag"
+  return $ cs z
+
+parserTrace :: (Stream s m t, Show t) => String -> ParsecT s u m ()
+--parserTrace x = parserTrace x
+parserTrace _ = return ()
+
+data SectionBlock = SectionRaw String | SectionGHCi String deriving Show
+
+eofString :: Parser String
+eofString = do
+  eof
+  return ""
+
+parseSection :: Parser [SectionBlock]
+parseSection =
+  optionMaybe eof >>= \case
+    Just () -> return []
+    Nothing -> do
+      isGhci <- optionMaybe parseGhciTag
+      block <- case isGhci of
+            Just ghci' -> return $ SectionGHCi ghci'
+            Nothing -> do
+              manyTill anyToken (lookAhead $ choice [parseGhciTag, eofString])
+              >>= return . SectionRaw
+      optionMaybe parseSection >>= \case
+        Just sndBlock -> return ( block : sndBlock)
+        Nothing -> return [block]
 
 return2x :: (Monad m, Monad m2) => a -> m (m2 a)
 return2x = return . return
 
 parse' :: Parser a -> String -> String -> Maybe a -- where Foo0 and Bar are the correct types
 parse' foo s0 s1 = eitherToMaybe $ parse foo s0 s1
+
+-- return $! unsafePerformIO $ do
+--       print ("hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm" :: String)
+-- () <- unsafePerformIO $! do
+--       error ("yolo" :: String)
+      -- _ <- many anyChar >>= fail . ("Remainng: "++)

@@ -7,6 +7,9 @@ import Test.QuickCheck
 import Data.Maybe
 import Text.Parsec
 import Text.Parsec.String
+import Data.List
+import System.IO.Unsafe
+import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
 main = do
@@ -15,9 +18,12 @@ main = do
 
 hUnitTests :: Test
 hUnitTests = test [
-    "" ~: "" ~: True ~=? testParseSectionHeader
-  , "" ~: "" ~: True ~=? testParseFileAndLimits
-  , "" ~: "" ~: True ~=? testParseFileReference
+    "testParseSectionHeader" ~: True ~=? testParseSectionHeader
+  , "testParseFileAndLimits" ~: True ~=? testParseFileAndLimits
+  , "testParseFileReference" ~: True ~=? testParseFileReference
+  , "testParseGhci" ~:          True ~=? testParseGhci
+  , "testMultiLineXyz" ~:       True ~=? testMultiLineXyz
+  , "testMultiLineXyz2" ~:       True ~=? testMultiLineXyz2
   ]
 
 testParseSectionHeader :: Bool
@@ -28,8 +34,9 @@ testParseSectionHeader = do
     Right (SectionHeaderReference s s') -> (s == pfx) && (s' == sfx)
     Left e -> error $ show e
 
-testParseFileAndLimits :: Bool 
-testParseFileAndLimits = do 
+
+testParseFileAndLimits :: Bool
+testParseFileAndLimits = do
   let fp = "abc/xyz.123"
   let t1 = fp ++ " "
   let t2 = fp ++ " 123 456 "
@@ -63,3 +70,52 @@ testParseFileReference = do
         Left e -> error $ show e
         _ -> error "?"
   and [c1, c2]
+
+testParseGhci :: Bool
+testParseGhci = do
+  let t1 = concat $ intersperse "\\n" [
+            "{{{ghci"
+          , "hmmm"
+          , "hmmm2"
+          , "abcxyz}}}"
+          ]
+  case (parse parseGhciTag "" t1) of
+        Right x -> x == "\\nhmmm\\nhmmm2\\nabcxyz"
+        Left e -> error $ show e
+
+testMultiLineXyz :: Bool
+testMultiLineXyz = do
+  let t2 = concat $ intersperse "\\n" [
+            "{{{ghci"
+          , "hmmm"
+          , "}}}"
+          ]
+  case (parse parseSection "testMultiLineXyz" t2) of
+        (Right (SectionGHCi x:[])) -> unsafePerformIO $ do
+          let expe = ("\\nhmmm\\n" :: String)
+          return $ x == expe
+        (Left e) -> error $ show e
+        (_) -> unsafePerformIO $ do
+          return False
+
+
+testMultiLineXyz2 :: Bool
+testMultiLineXyz2 = do
+  let t2 = concat $ intersperse "\\n" [
+            "abcxyz"
+          , "{{{ghci"
+          , "hmm"
+          , "hmm"
+          , "}}}"
+          , "abcxyz"
+          ]
+  case (parse parseSection "testMultiLineXyz" t2) of
+        (Right (SectionRaw x:SectionGHCi y:SectionRaw x':[])) -> unsafePerformIO $ do
+          return $
+               (x == "abcxyz\\n")
+            && (x' == "\\nabcxyz")
+            && (y == "\\nhmm\\nhmm\\n")
+        (Left e) -> error $ show e
+        _ -> unsafePerformIO $ do
+          return False
+

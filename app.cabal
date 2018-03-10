@@ -24,7 +24,7 @@ executable app
                     ,  Section
 
   -- other-extensions:    
-  build-depends:       base >=4.9 && <4.10
+  build-depends:       base >=4.9 && < 4.11
                       , turtle
                       , text
                       , safe
@@ -41,5 +41,8 @@ executable app
                       , optparse-applicative
                       , extra
                       , transformers
+                      , QuickCheck
+                      , HUnit
+                      , pretty-simple
   -- hs-source-dirs:      
   default-language:    Haskell2010
