@@ -1,0 +1,30 @@
+name: app
+version: '0.1.0.0'
+author: Chris Stryczynski
+maintainer: Chris Stryczynski
+license: BSD3
+dependencies:
+- base >=4.9 && <4.11
+- turtle
+- text
+- safe
+- unix
+- foldl
+- string-conversions
+- filepath
+- system-filepath
+- parsec
+- mtl
+- directory
+- regex-posix
+- regex-pcre
+- optparse-applicative
+- extra
+- transformers
+- QuickCheck
+- HUnit
+- pretty-simple
+executables:
+  app:
+    main: Main.hs
+    source-dirs: src
