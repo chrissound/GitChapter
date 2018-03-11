@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 --{-# OPTIONS -Wno-unused-imports #-}
 {-# OPTIONS -Wno-unused-matches #-}
 module Section where
@@ -35,8 +36,7 @@ getSectionHashOffsets filePrefix = do
   case fP of
     Just fP' -> do
       let fP'' = convertString $ encodeString $ fP'
-      cHash <- gitPathCommitHash fP''
-      case cHash of
+      gitPathCommitHash fP'' >>= \case
         Just cHash' -> return $ Right (cHash', fP')
         Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fP''
     Nothing -> return $ Left "Nope"
@@ -48,26 +48,22 @@ compileSection filePrefix = do
       cHashPrevious <- getSectionHashOffsets $ sectionKey - 1
       cHash <- getSectionHashOffsets sectionKey
       case (cHash, cHashPrevious) of
-        (Right (cHash', fP'), Right (cHashPrevious', _)) -> do
-          let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
-          z <- gitCheckout cHash' "src/"
-          case z of
-            ExitSuccess -> do
-              sContent <- readTextFile fP'
-              let preRendered = renderTemplate sContent
-              case preRendered of
+        (Right (cHash', fP'), Right (cHashPrevious', _)) ->
+          gitCheckout cHash' "src/" >>= \case
+            ExitSuccess ->
+              renderTemplate <$> readTextFile fP' >>= \case
                 Right rendered -> do
-                  r <- runReaderT ((fmap . fmap) T.unlines (sequence <$> traverse compilePreOutput rendered)) hc
-                  case r of
+                  let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
+                  runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc >>= \case
                     Right x -> do
                       appendFile compiledOutput $ cs x
-                      return $ Right $ "Successful compilation for section " <> filePrefix
+                      pure $ Right $ "Successful compilation for section " <> filePrefix
                     Left x -> do
                       putStrLn ("Hart compilation error!" :: String)
                       putStrLn (printf "Occurred within section: %d" sectionKey :: String)
                       putStrLn ( printf "Occurred within commit range of (%s - %s)" (cs cHashPrevious' :: String) (cs cHash' :: String) :: String)
                       error x
-                Left e -> return $ Left e
+                Left e -> pure $ Left e
             _ -> return $ Left ":("
         (Left e, _) -> return $ Left $ "Unable to determine `from git commit` hash: " ++ e
         (_, Left e) -> return $ Left $ "Unable to determine `until git commit` hash: " ++ e

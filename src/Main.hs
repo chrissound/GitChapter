@@ -25,7 +25,7 @@ work x = do
   gitLsFiles "sections/" >>= \case
     Nothing ->
       error
-        "Have not found any relevant files within sections/ within the repository"
+        "Found no relevant files within sections/ within the repository"
     Just sections -> do
       let sectionIndexes = getIndexFromSectionFilepath <$> sections
       case (sequence $ readMay <$> sectionIndexes :: Maybe [Int]) of
