@@ -58,18 +58,21 @@ compileSection filePrefix = do
                     Right x -> do
                       appendFile compiledOutput $ cs x
                       pure $ Right $ "Successful compilation for section " <> filePrefix
-                    Left x -> do
-                      putStrLn ("Hart compilation error!" :: String)
-                      putStrLn (printf "Occurred within section: %d" sectionKey :: String)
-                      putStrLn ( printf "Occurred within commit range of (%s - %s)" (cs cHashPrevious' :: String) (cs cHash' :: String) :: String)
-                      error x
-                Left e -> pure $ Left e
+                    Left x -> sectionError sectionKey cHash' cHashPrevious' x
+                Left e -> sectionError sectionKey cHash' cHashPrevious' e
             _ -> return $ Left ":("
-        (Left e, _) -> return $ Left $ "Unable to determine `from git commit` hash: " ++ e
-        (_, Left e) -> return $ Left $ "Unable to determine `until git commit` hash: " ++ e
+        (Left e, _) -> pure $ Left $ "Unable to determine `from git commit` hash: " ++ e
+        (_, Left e) -> pure $ Left $ "Unable to determine `until git commit` hash: " ++ e
     Nothing -> do
       print filePrefix
       error "could not read section key index"
+
+sectionError :: (PrintfArg t3, PrintfArg t2, PrintfArg t1) => t1 -> t2 -> t3 -> [Char] -> IO b
+sectionError sk hashPrev hash e = do
+    putStrLn ("Hart compilation error!" :: String)
+    putStrLn (printf "Occurred within section: %d" sk :: String)
+    putStrLn ( printf "Occurred within commit range of (%s - %s)" hashPrev hash :: String)
+    error e
 
 compiledOutput :: Prelude.FilePath
 compiledOutput = "compiledArticle.md"

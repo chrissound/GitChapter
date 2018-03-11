@@ -1,4 +1,6 @@
 {-# OPTIONS -Wno-unused-imports #-}
+{-# OPTIONS -Wno-type-defaults #-}
+{-# Language OverloadedStrings #-}
 module Test where
 
 import Render
@@ -10,6 +12,8 @@ import Text.Parsec.String
 import Data.List
 import System.IO.Unsafe
 import Text.Pretty.Simple (pPrint)
+import Data.String.Conversions
+import Data.Text (Text)
 
 main :: IO ()
 main = do
@@ -18,12 +22,13 @@ main = do
 
 hUnitTests :: Test
 hUnitTests = test [
-    "testParseSectionHeader" ~: True ~=? testParseSectionHeader
-  , "testParseFileAndLimits" ~: True ~=? testParseFileAndLimits
-  , "testParseFileReference" ~: True ~=? testParseFileReference
-  , "testParseGhci" ~:          True ~=? testParseGhci
-  , "testMultiLineXyz" ~:       True ~=? testMultiLineXyz
-  , "testMultiLineXyz2" ~:       True ~=? testMultiLineXyz2
+    "testParseSectionHeader"    ~: True ~=? testParseSectionHeader
+  , "testParseFileAndLimits"    ~: True ~=? testParseFileAndLimits
+  , "testParseFileReference"    ~: True ~=? testParseFileReference
+  , "testParseGhci"             ~: True ~=? testParseGhci
+  , "testMultiLineXyz"          ~: True ~=? testMultiLineXyz
+  , "testMultiLineXyz2"         ~: True ~=? testMultiLineXyz2
+  , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
   ]
 
 testParseSectionHeader :: Bool
@@ -92,7 +97,7 @@ testMultiLineXyz = do
           ]
   case (parse parseSection "testMultiLineXyz" t2) of
         (Right (SectionGHCi x:[])) -> unsafePerformIO $ do
-          let expe = ("\\nhmmm\\n" :: String)
+          let expe = "\\nhmmm\\n"
           return $ x == expe
         (Left e) -> error $ show e
         (_) -> unsafePerformIO $ do
@@ -119,3 +124,22 @@ testMultiLineXyz2 = do
         _ -> unsafePerformIO $ do
           return False
 
+testRealWorldSectionBlock :: Bool
+testRealWorldSectionBlock = do
+   let t2 = concat $ intersperse "\\n" [
+             "Testing"
+           , "==========================================="
+           , "```haskell"
+           , "{-# LANGUAGE OverloadedStrings #-}"
+           , "```"
+           , "Or, abc xyz"
+           , "-----------"
+           ]
+   case (parse parseSection "testMultiLineXyz" $ cs t2) of
+        (Right (SectionRaw x:[])) -> unsafePerformIO $ do
+          let expe = cs $ t2
+          return $ x == expe
+        (Left e) -> error $ show e
+        (e) -> unsafePerformIO $ do
+          print e
+          return False

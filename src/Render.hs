@@ -79,12 +79,26 @@ shellOutput x = runSh x >>= \case
 
 renderTemplate :: Text -> Either String [PreLineOutput]
 renderTemplate x = do
-  let lns = Data.Text.lines x
-  case filter (\z -> case z of; Just (PossibleRef _) -> True; _ -> False) $ parseLine <$> lns of
-    [] -> Right $ prepareLineOutput <$> lns
-    ((Just (PossibleRef r)):_) -> Left $ show (r)
-    _ -> error "This should not be possible..."
+  case (transformInnerSection <$> (parse parseSection "parseSection" $ cs x)) of
+    Right lns -> do
+      case filter (\z -> case z of; Just (PossibleRef _) -> True; _ -> False) $ parseLine <$> lns of
+        [] -> Right $ prepareLineOutput <$> lns
+        ((Just (PossibleRef r)):_) -> Left $ show (r)
+        _ -> error "This should not be possible..."
+    Left e -> do
+      -- return $! unsafePerformIO $! do
+      --   print $ (Data.Text.lines x) !! 0
+      --   print $ (Data.Text.lines x) !! 1
+      --   print $ parse parseSection "parseSection" $ cs $ Data.Text.unlines $ take 61 $ (Data.Text.lines x)
+      --   _ <- error "???"
+      --   print $ parse parseSection "parseSection" $ cs x
+      Left $ cs ("An internal error has occurred, please report this bug. Unable to parse inner sections within section: " ++ show e)
 
+transformInnerSection :: [SectionBlock] -> [Text]
+transformInnerSection ([]) = []
+transformInnerSection (x:xs) = case x of
+        SectionRaw b -> Data.Text.lines b ++ (transformInnerSection xs)
+        SectionGHCi b -> b                 : (transformInnerSection xs)
 
 parseLine :: Text -> Maybe Reference
 parseLine x = do
@@ -182,10 +196,9 @@ parseGhciTag = do
   return $ cs z
 
 parserTrace :: (Stream s m t, Show t) => String -> ParsecT s u m ()
---parserTrace x = parserTrace x
 parserTrace _ = return ()
 
-data SectionBlock = SectionRaw String | SectionGHCi String deriving Show
+data SectionBlock = SectionRaw Text | SectionGHCi Text deriving Show
 
 eofString :: Parser String
 eofString = do
@@ -199,10 +212,10 @@ parseSection =
     Nothing -> do
       isGhci <- optionMaybe parseGhciTag
       block <- case isGhci of
-            Just ghci' -> return $ SectionGHCi ghci'
+            Just ghci' -> return $ SectionGHCi $ cs ghci'
             Nothing -> do
-              manyTill anyToken (lookAhead $ choice [parseGhciTag, eofString])
-              >>= return . SectionRaw
+              manyTill anyToken (lookAhead $ Text.Parsec.try $ choice [parseGhciTag, eofString])
+              >>= return . SectionRaw . cs
       optionMaybe parseSection >>= \case
         Just sndBlock -> return ( block : sndBlock)
         Nothing -> return [block]

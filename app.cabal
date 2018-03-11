@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1f73d2995629cc74e624b46239836d853591fa7503c5e3eaed86047fb066c788
+-- hash: 82c791d9aeff43b672badde4c793534e805acd075fd931a0259fd7da9deb9ed5
 
 name:           app
 version:        0.1.0.0
@@ -42,6 +42,43 @@ executable app
       Git
       GitTextPartial
       Hart
+      Operations
+      Render
+      Section
+      Test
+      Paths_app
+  default-language: Haskell2010
+
+executable test
+  main-is: Test.hs
+  hs-source-dirs:
+      src
+  build-depends:
+      HUnit
+    , QuickCheck
+    , base >=4.9 && <4.11
+    , directory
+    , extra
+    , filepath
+    , foldl
+    , mtl
+    , optparse-applicative
+    , parsec
+    , pretty-simple
+    , regex-pcre
+    , regex-posix
+    , safe
+    , string-conversions
+    , system-filepath
+    , text
+    , transformers
+    , turtle
+    , unix
+  other-modules:
+      Git
+      GitTextPartial
+      Hart
+      Main
       Operations
       Render
       Section

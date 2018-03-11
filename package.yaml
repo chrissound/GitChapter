@@ -28,3 +28,6 @@ executables:
   app:
     main: Main.hs
     source-dirs: src
+  test:
+    main: Test.hs
+    source-dirs: src
