@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 82c791d9aeff43b672badde4c793534e805acd075fd931a0259fd7da9deb9ed5
+-- hash: c6a36066afa81cdf0199dc440636cfa364603db581b7d89f467e71cf1a782147
 
 name:           app
 version:        0.1.0.0
@@ -29,20 +29,24 @@ executable app
     , optparse-applicative
     , parsec
     , pretty-simple
+    , process
     , regex-pcre
     , regex-posix
     , safe
     , string-conversions
     , system-filepath
+    , template-haskell
     , text
     , transformers
     , turtle
     , unix
   other-modules:
+      BlogLiterately
       Git
       GitTextPartial
       Hart
       Operations
+      QuasiText
       Render
       Section
       Test
@@ -65,21 +69,25 @@ executable test
     , optparse-applicative
     , parsec
     , pretty-simple
+    , process
     , regex-pcre
     , regex-posix
     , safe
     , string-conversions
     , system-filepath
+    , template-haskell
     , text
     , transformers
     , turtle
     , unix
   other-modules:
+      BlogLiterately
       Git
       GitTextPartial
       Hart
       Main
       Operations
+      QuasiText
       Render
       Section
       Paths_app

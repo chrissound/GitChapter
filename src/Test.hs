@@ -1,6 +1,9 @@
 {-# OPTIONS -Wno-unused-imports #-}
 {-# OPTIONS -Wno-type-defaults #-}
 {-# Language OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE Strict #-}
+{-# LANGUAGE StrictData #-}
 module Test where
 
 import Render
@@ -14,6 +17,7 @@ import System.IO.Unsafe
 import Text.Pretty.Simple (pPrint)
 import Data.String.Conversions
 import Data.Text (Text)
+import QuasiText
 
 main :: IO ()
 main = do
@@ -29,6 +33,9 @@ hUnitTests = test [
   , "testMultiLineXyz"          ~: True ~=? testMultiLineXyz
   , "testMultiLineXyz2"         ~: True ~=? testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
+  , "testRunGhci"               ~: "head :: [a] -> a" ~=? testGhciRun
+  , "testRunGhci2"              ~: True ~=? testGhciRun2
+  , "testRenderTemplate"        ~: True ~=? testRenderTemplate
   ]
 
 testParseSectionHeader :: Bool
@@ -143,3 +150,47 @@ testRealWorldSectionBlock = do
         (e) -> unsafePerformIO $ do
           print e
           return False
+
+testGhciRun :: String
+testGhciRun = do
+  cs $ unsafePerformIO $ do
+    runGhci ":t head"
+
+testGhciRun2 :: Bool
+testGhciRun2 = do
+  let a = cs $ unsafePerformIO $ do
+        runGhci ":t head\n:t tail"
+  unsafePerformIO $ do
+    return $ (a :: String) == "head :: [a] -> a\ntail :: [a] -> [a]"
+
+testRenderTemplate :: Bool
+testRenderTemplate = do
+  let input = [str|### Introducing Side-Effects
+
+{{{ghci
+  :t head
+  4 + 4
+}}}
+
+testing123|] :: Text
+  let sectionExpected = [
+          SectionRaw "### Introducing Side-Effects\n\n"
+        , SectionGHCi "  :t head\n  4 + 4\n"
+        , SectionRaw "\n\ntesting123"
+        ]
+  unsafePerformIO $ case (parse parseSection "parseSection" $ cs input) of
+    Right sections ->
+      if (sections == sectionExpected) then do
+        let textExpected = [""]
+        let a =transformInnerSection sections
+        if (a == textExpected) then
+          return True
+        else do
+          print a
+          pPrint a
+          error "???"
+      else do
+          print sections
+          print sectionExpected
+          error "Incorrect sections"
+    Left e -> error $ show e

@@ -24,6 +24,10 @@ dependencies:
 - QuickCheck
 - HUnit
 - pretty-simple
+- process 
+- template-haskell
+- pretty-simple
+
 executables:
   app:
     main: Main.hs

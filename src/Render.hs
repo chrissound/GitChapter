@@ -6,15 +6,20 @@
 module Render where
 
 import Prelude hiding (readFile)
-import Data.Text (Text, lines, unlines)
+import Data.Text (Text, lines, unlines, strip)
 import Data.String.Conversions
-import Data.Text.Lazy.IO
+import Data.Text.Lazy.IO hiding (hPutStr)
 import Data.Text.Lazy (toStrict)
 import Control.Monad.Trans
 import Turtle (ExitCode(..))
 import Text.Printf
 import Safe
 --import System.IO.Unsafe
+import System.Process (runInteractiveCommand)
+import GHC.IO.Handle (hPutStr)
+import System.IO (hFlush)
+import BlogLiterately
+import Debug.Trace
 
 import Text.Parsec hiding (parserTrace)
 import Text.Parsec.String
@@ -28,12 +33,13 @@ import Git
 import Hart
 
 type FileLineRange = Maybe(Int, Int)
-data FileReference = FileReference String FileLineRange deriving Show
-data GitDiffReference = GitDiffReference Text deriving Show
-data GitCommitOffestReference = GitCommitOffestReference deriving Show
-data ShellOutput = ShellOutput Text deriving Show
-data PossibleTag = PossibleTag String deriving Show
-data SectionHeaderReference = SectionHeaderReference String String deriving Show
+data FileReference = FileReference String FileLineRange deriving (Show, Eq)
+data GitDiffReference = GitDiffReference Text deriving (Show, Eq)
+data GitCommitOffestReference = GitCommitOffestReference deriving (Show, Eq)
+data ShellOutput = ShellOutput Text deriving (Show, Eq)
+data PossibleTag = PossibleTag String deriving (Show, Eq)
+data SectionHeaderReference = SectionHeaderReference String String deriving (Show, Eq)
+data GHCiReference = GHCiReference Text deriving (Show, Eq)
 
 data Reference =
     FileRef FileReference
@@ -42,7 +48,8 @@ data Reference =
   | PossibleRef PossibleTag
   | ShellOutputRef ShellOutput
   | SectionHeaderRef SectionHeaderReference
-data PreLineOutput = Raw Text | RefOutput Reference
+  | GHCiRef GHCiReference deriving (Show, Eq)
+data PreLineOutput = Raw Text | RefOutput Reference deriving (Show, Eq)
 
 slice :: Int -> Int -> [a] -> [a]
 slice from to xs = take (to - from + 1) (drop from xs)
@@ -67,10 +74,23 @@ compilePreOutput (RefOutput (FileRef x)) = lift $ maybeToEither "" <$> fileRefer
 compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
 compilePreOutput (RefOutput (GitCommitOffestRef x)) = gitCommitRefence x
 compilePreOutput (RefOutput (ShellOutputRef (ShellOutput x))) = lift $ shellOutput x >>= return . Right
+compilePreOutput (RefOutput (GHCiRef (GHCiReference x ))) = lift $ (Right <$> runGhci (trace "got ghci.........." x))
 compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found of:" ++ x)
 compilePreOutput (RefOutput (SectionHeaderRef (SectionHeaderReference prefix suffix))) = do
   (HartConfig _ _ section) <- ask
   return $ Right $ cs $ prefix ++ "Section " ++ show section ++ suffix
+
+runGhci :: Text -> IO Text
+runGhci expr =  do
+  (pin, pout, _, _) <- liftIO $ runInteractiveCommand "ghci -v0 -ignore-dot-ghci "
+  let script = "putStrLn " ++ show magic ++ "\n"
+                 ++ cs expr ++ "\n"
+                 ++ "putStrLn " ++ show magic ++ "\n"
+  out <- liftIO $ do
+    hPutStr pin script
+    hFlush pin
+    extract' pout
+  pure $ trace "???????????????????????????????????????????????" $ strip $ cs out
 
 shellOutput :: Text -> IO Text
 shellOutput x = runSh x >>= \case
@@ -86,32 +106,28 @@ renderTemplate x = do
         ((Just (PossibleRef r)):_) -> Left $ show (r)
         _ -> error "This should not be possible..."
     Left e -> do
-      -- return $! unsafePerformIO $! do
-      --   print $ (Data.Text.lines x) !! 0
-      --   print $ (Data.Text.lines x) !! 1
-      --   print $ parse parseSection "parseSection" $ cs $ Data.Text.unlines $ take 61 $ (Data.Text.lines x)
-      --   _ <- error "???"
-      --   print $ parse parseSection "parseSection" $ cs x
       Left $ cs ("An internal error has occurred, please report this bug. Unable to parse inner sections within section: " ++ show e)
 
 transformInnerSection :: [SectionBlock] -> [Text]
 transformInnerSection ([]) = []
 transformInnerSection (x:xs) = case x of
         SectionRaw b -> Data.Text.lines b ++ (transformInnerSection xs)
-        SectionGHCi b -> b                 : (transformInnerSection xs)
+        SectionGHCi b -> "{{{ghci\n" <> b <> "}}}" : (transformInnerSection xs)
 
 parseLine :: Text -> Maybe Reference
 parseLine x = do
   let xStr = convertString x :: String
-  asum [
+  case asum [
           FileRef <$> parse' parseFileReference "file reference" xStr
         , GitRef <$> parse' parseGitDiffReference "git diff tag" xStr
         , GitCommitOffestRef <$> parse' parseGitCommitOffest "git commit offset" xStr
         , ShellOutputRef <$> parse' parseShellOutputTag "shellOutput tag" xStr
         , SectionHeaderRef <$> (parse' (parseSectionHeader) "section header" $ xStr)
-        , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
+        , (GHCiRef . GHCiReference . cs) <$> (parse' (parseGhciTag) "ghci reference" $ xStr)
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
+    of Just z -> trace ("Parsed a reference of: " ++ show x) $ Just z
+       Nothing -> Nothing
 
 gitDiff' :: GitDiffReference -> Hart (Either String Text)
 gitDiff' (GitDiffReference z) = do
@@ -198,7 +214,7 @@ parseGhciTag = do
 parserTrace :: (Stream s m t, Show t) => String -> ParsecT s u m ()
 parserTrace _ = return ()
 
-data SectionBlock = SectionRaw Text | SectionGHCi Text deriving Show
+data SectionBlock = SectionRaw Text | SectionGHCi Text deriving (Show, Eq)
 
 eofString :: Parser String
 eofString = do
