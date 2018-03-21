@@ -21,7 +21,6 @@ import Data.Maybe
 runGhci :: Text -> IO Text
 runGhci expr =  do
   let inputLines = filter (/= "") (T.lines expr)
-  print inputLines
   createProcess ((proc "ghci" ["-v0", "-ignore-dot-ghci"]) {std_in=CreatePipe, std_out=CreatePipe, std_err=CreatePipe}) >>= \case
     (Just pin, Just pout, Just perr, ph) -> do
       output <- do
@@ -43,10 +42,9 @@ runGhci expr =  do
                 y <- timeout (1 * (10^6)) (takeMVar stderrMVar) >>= return . fromMaybe "***ghci timed out"
                 killThread tOutId
                 killThread tErrId
-                return $ trace "OUTPUT" $ cs $! x ++ y
+                return $ cs $! x ++ y
           )
       let final = T.concat ( zipWith f (inputLines :: [Text]) (output :: [Text]) :: [Text])
-      print final
       terminateProcess ph
       pure $ T.strip $ cs $ final
     _ -> error "Invaild GHCI process"

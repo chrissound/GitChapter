@@ -14,8 +14,6 @@ import Control.Monad.Trans
 import Turtle (ExitCode(..))
 import Text.Printf
 import Safe
---import System.IO.Unsafe
-import Debug.Trace
 
 import Text.Parsec hiding (parserTrace)
 import Text.Parsec.String
@@ -72,8 +70,8 @@ compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
 compilePreOutput (RefOutput (GitCommitOffestRef x)) = gitCommitRefence x
 compilePreOutput (RefOutput (ShellOutputRef (ShellOutput x))) = lift $ shellOutput x >>= return . Right
 compilePreOutput (RefOutput (GHCiRef (GHCiReference x ))) = lift $
-  (Right . (<> "\n```") . ((<>) "````\n") )  <$> runGhci x
-compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found of:" ++ x)
+  (Right . (<> "\n````") . ((<>) "````\n") )  <$> runGhci x
+compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found, other parsers did not succeed of:" ++ x)
 compilePreOutput (RefOutput (SectionHeaderRef (SectionHeaderReference prefix suffix))) = do
   (HartConfig _ _ section) <- ask
   return $ Right $ cs $ prefix ++ "Section " ++ show section ++ suffix
@@ -112,7 +110,7 @@ parseLine x = do
         , (GHCiRef . GHCiReference . cs) <$> (parse' (parseGhciTag) "ghci reference" $ xStr)
         , PossibleRef <$> (parse' (parsePossibleTag) "possible tag" $ xStr)
         ]
-    of Just z -> trace ("Parsed a reference of: " ++ show x) $ Just z
+    of Just z -> Just z
        Nothing -> Nothing
 
 gitDiff' :: GitDiffReference -> Hart (Either String Text)
@@ -182,7 +180,6 @@ parsePossibleTag :: Parser PossibleTag
 parsePossibleTag = do
   z <- string "{{" >> manyTill anyChar (Text.Parsec.try $ string "}}")
   return $ PossibleTag z
-
 parseShellOutputTag :: Parser ShellOutput
 parseShellOutputTag = do
   z <- string "{{{{" >> optional space >> string "shellOutput" >> space >> many (noneOf "}}}}}")

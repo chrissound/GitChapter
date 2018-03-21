@@ -19,6 +19,7 @@ import Data.String.Conversions
 import Data.Text (Text)
 import QuasiText
 import GHCi
+import Debug.Trace
 
 main :: IO ()
 main = do
@@ -34,9 +35,9 @@ hUnitTests = test [
   , "testMultiLineXyz"          ~: True ~=? testMultiLineXyz
   , "testMultiLineXyz2"         ~: True ~=? testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
-  , "testRunGhci"               ~: "head :: [a] -> a" ~=? testGhciRun
-  , "testRunGhci2"              ~: True ~=? testGhciRun2
-  , "testRenderTemplate"        ~: True ~=? testRenderTemplate
+  , "testRunGhci"               ~: testGhciRun
+  , "testRunGhci2"              ~: testGhciRun2
+  , "testRenderTemplate"        ~: testRenderTemplate
   ]
 
 testParseSectionHeader :: Bool
@@ -148,23 +149,17 @@ testRealWorldSectionBlock = do
           let expe = cs $ t2
           return $ x == expe
         (Left e) -> error $ show e
-        (e) -> unsafePerformIO $ do
-          print e
+        (_) -> unsafePerformIO $ do
           return False
 
-testGhciRun :: String
-testGhciRun = do
-  cs $ unsafePerformIO $ do
-    runGhci ":t head"
+testGhciRun :: Test
+testGhciRun = ("ghci> :t head\n      head :: [a] -> a") ~=? (unsafePerformIO $ runGhci ":t head")
 
-testGhciRun2 :: Bool
-testGhciRun2 = do
-  let a = cs $ unsafePerformIO $ do
-        runGhci ":t head\n:t tail"
-  unsafePerformIO $ do
-    return $ (a :: String) == "head :: [a] -> a\ntail :: [a] -> [a]"
+testGhciRun2 :: Test
+testGhciRun2 = "ghci> :t head\n      head :: [a] -> a\nghci> :t tail\n      tail :: [a] -> [a]"
+  ~=? (unsafePerformIO $ runGhci ":t head\n:t tail")
 
-testRenderTemplate :: Bool
+testRenderTemplate :: Test
 testRenderTemplate = do
   let input = [str|### Introducing Side-Effects
 
@@ -182,16 +177,14 @@ testing123|] :: Text
   unsafePerformIO $ case (parse parseSection "parseSection" $ cs input) of
     Right sections ->
       if (sections == sectionExpected) then do
-        let textExpected = [""]
-        let a =transformInnerSection sections
-        if (a == textExpected) then
-          return True
-        else do
-          print a
-          pPrint a
-          error "???"
+        let textExpected = [
+                "### Introducing Side-Effects"
+              , ""
+              , "{{{ghci\n  :t head\n  4 + 4\n}}}"
+              , ""
+              , ""
+              , "testing123"]
+        return $ textExpected ~=? transformInnerSection sections
       else do
-          print sections
-          print sectionExpected
-          error "Incorrect sections"
+        return $ sectionExpected ~=? sections
     Left e -> error $ show e
