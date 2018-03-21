@@ -3,8 +3,12 @@
 
 module Hart
   ( module Hart, ask, lift, runReaderT
+  , module Data.String.Conversions
+  , Text
+  , module Data.Monoid
   ) where
 
+import Data.Monoid
 import Data.Text hiding (empty)
 import Data.String.Conversions
 import Control.Monad.Trans.Reader (runReaderT, ReaderT, ask)

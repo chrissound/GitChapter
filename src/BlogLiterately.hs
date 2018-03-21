@@ -677,9 +677,10 @@
 module BlogLiterately where
 
 import System.Process (ProcessHandle)
-import GHC.IO.Handle (Handle, hGetLine)
+import GHC.IO.Handle (Handle, hGetLine, hIsEOF)
 import           Data.List                  (isPrefixOf)
 import           Control.Arrow              (first)
+
 
 
 type ProcessInfo = (Handle, Handle, Handle, ProcessHandle)
@@ -697,7 +698,10 @@ extract' h = fmap (extract . Prelude.unlines) (readMagic 2)
     readMagic :: Int -> IO [String]
     readMagic 0 = return []
     readMagic n = do
-      l <- hGetLine h
+      b <- hIsEOF h
+      l <- case b of
+        False -> hGetLine h
+        True -> return ""
       let n' | (null . snd . breaks (isPrefixOf magic)) l = n
              | otherwise                                  = n - 1
       fmap (l:) (readMagic n')

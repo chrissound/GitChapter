@@ -6,7 +6,7 @@
 module Render where
 
 import Prelude hiding (readFile)
-import Data.Text (Text, lines, unlines, strip)
+import Data.Text (lines, unlines)
 import Data.String.Conversions
 import Data.Text.Lazy.IO hiding (hPutStr)
 import Data.Text.Lazy (toStrict)
@@ -15,22 +15,19 @@ import Turtle (ExitCode(..))
 import Text.Printf
 import Safe
 --import System.IO.Unsafe
-import System.Process (runInteractiveCommand)
-import GHC.IO.Handle (hPutStr)
-import System.IO (hFlush)
-import BlogLiterately
 import Debug.Trace
 
 import Text.Parsec hiding (parserTrace)
 import Text.Parsec.String
---import Control.Applicative
 import Control.Monad.Identity (guard)
 import Control.Exception as Excp
 import System.IO.Error
 import Data.Either.Extra
 import Data.Foldable
+
 import Git
 import Hart
+import GHCi
 
 type FileLineRange = Maybe(Int, Int)
 data FileReference = FileReference String FileLineRange deriving (Show, Eq)
@@ -74,23 +71,12 @@ compilePreOutput (RefOutput (FileRef x)) = lift $ maybeToEither "" <$> fileRefer
 compilePreOutput (RefOutput (GitRef x)) = gitDiff' x
 compilePreOutput (RefOutput (GitCommitOffestRef x)) = gitCommitRefence x
 compilePreOutput (RefOutput (ShellOutputRef (ShellOutput x))) = lift $ shellOutput x >>= return . Right
-compilePreOutput (RefOutput (GHCiRef (GHCiReference x ))) = lift $ (Right <$> runGhci (trace "got ghci.........." x))
+compilePreOutput (RefOutput (GHCiRef (GHCiReference x ))) = lift $
+  (Right . (<> "\n```") . ((<>) "````\n") )  <$> runGhci x
 compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found of:" ++ x)
 compilePreOutput (RefOutput (SectionHeaderRef (SectionHeaderReference prefix suffix))) = do
   (HartConfig _ _ section) <- ask
   return $ Right $ cs $ prefix ++ "Section " ++ show section ++ suffix
-
-runGhci :: Text -> IO Text
-runGhci expr =  do
-  (pin, pout, _, _) <- liftIO $ runInteractiveCommand "ghci -v0 -ignore-dot-ghci "
-  let script = "putStrLn " ++ show magic ++ "\n"
-                 ++ cs expr ++ "\n"
-                 ++ "putStrLn " ++ show magic ++ "\n"
-  out <- liftIO $ do
-    hPutStr pin script
-    hFlush pin
-    extract' pout
-  pure $ trace "???????????????????????????????????????????????" $ strip $ cs out
 
 shellOutput :: Text -> IO Text
 shellOutput x = runSh x >>= \case

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c6a36066afa81cdf0199dc440636cfa364603db581b7d89f467e71cf1a782147
+-- hash: 02dbea77c7391844700daff3a4b1c854eb8ece365e0f8bedfba35005f5c6b0a8
 
 name:           app
 version:        0.1.0.0
@@ -42,6 +42,8 @@ executable app
     , unix
   other-modules:
       BlogLiterately
+      Example
+      GHCi
       Git
       GitTextPartial
       Hart
@@ -82,6 +84,8 @@ executable test
     , unix
   other-modules:
       BlogLiterately
+      Example
+      GHCi
       Git
       GitTextPartial
       Hart

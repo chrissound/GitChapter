@@ -18,6 +18,7 @@ import Text.Pretty.Simple (pPrint)
 import Data.String.Conversions
 import Data.Text (Text)
 import QuasiText
+import GHCi
 
 main :: IO ()
 main = do
