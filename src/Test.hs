@@ -73,7 +73,7 @@ testParseFileAndLimits = do
 testParseFileReference :: Bool
 testParseFileReference = do
   let fp = "abc/xyz.123"
-  let t1 =  "{{ file "++ fp ++" }}"
+  let t1 =  "{{file "++ fp ++"}}"
   let t2 =  "{{ file "++ fp ++" 10 20 }}"
   let c1 = case (parse parseFileReference "fileRefTest" t1) of
         Right (FileReference x Nothing) -> x == fp

@@ -29,6 +29,7 @@ import GHCi
 
 type FileLineRange = Maybe(Int, Int)
 data FileReference = FileReference String FileLineRange deriving (Show, Eq)
+data FileSection = FileSection String String deriving (Show, Eq)
 data GitDiffReference = GitDiffReference Text deriving (Show, Eq)
 data GitCommitOffestReference = GitCommitOffestReference deriving (Show, Eq)
 data ShellOutput = ShellOutput Text deriving (Show, Eq)
@@ -154,7 +155,7 @@ parseSectionHeader = do
 
 parseFileAndLimits :: Parser (String, Maybe Int, Maybe Int)
 parseFileAndLimits = do
-      l <- many (noneOf " ")
+      l <- many (noneOf " }")
       _ <- optional space
       l' <- optionMaybe $ many1 digit
       _ <- optional space

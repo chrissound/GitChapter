@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 02dbea77c7391844700daff3a4b1c854eb8ece365e0f8bedfba35005f5c6b0a8
+-- hash: dc941b768a7283cf0583113902b061cc9c4a4c4ca282d741ce6d55673ea7f304
 
 name:           app
 version:        0.1.0.0
@@ -27,6 +27,7 @@ executable app
     , foldl
     , mtl
     , optparse-applicative
+    , pandoc-include-code
     , parsec
     , pretty-simple
     , process
@@ -69,6 +70,7 @@ executable test
     , foldl
     , mtl
     , optparse-applicative
+    , pandoc-include-code
     , parsec
     , pretty-simple
     , process

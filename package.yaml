@@ -27,6 +27,7 @@ dependencies:
 - process 
 - template-haskell
 - pretty-simple
+- pandoc-include-code
 
 executables:
   app:
