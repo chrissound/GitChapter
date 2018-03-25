@@ -4,13 +4,9 @@
 module Operations.Parsers where
 
 import Hart
---import Render
+
 import Text.Parsec.String
 import Data.Either.Extra
---import Data.String.Conversions
---import Data.Text.Lazy.IO hiding (hPutStr)
---import Data.Text.Lazy (toStrict)
---import Control.Monad.Trans
 import Safe
 
 import Text.Parsec hiding (parserTrace)

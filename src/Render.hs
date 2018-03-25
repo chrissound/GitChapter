@@ -10,10 +10,8 @@ module Render where
 import Prelude hiding (readFile)
 import Data.Text (lines)
 import Data.String.Conversions
---import Control.Monad.Trans
 import Turtle (ExitCode(..))
 import Text.Printf
---import Safe
 import Operations hiding (parse)
 import qualified Operations as Ops
 
@@ -22,7 +20,6 @@ import Data.Foldable
 
 import Git
 import Hart
---import GHCi
 
 data Reference =
     FileRef FileReference
@@ -37,10 +34,6 @@ data PreLineOutput = Raw Text | RefOutput Reference' deriving (Show)
 compilePreOutput :: PreLineOutput -> Hart (Either String Text)
 compilePreOutput (Raw x) = return $ Right x
 compilePreOutput (RefOutput (Reference' r)) = render r
--- compilePreOutput (RefOutput (GitCommitOffestRef x)) = gitCommitRefence x
--- compilePreOutput (RefOutput (GHCiRef (GHCiReference x ))) = lift $
---   (Right . (<> "\n````") . ((<>) "````\n") )  <$> runGhci x
--- compilePreOutput (RefOutput (PossibleRef (PossibleTag x))) = return $ Left $ ("PossibleRef found, other parsers did not succeed of:" ++ x)
 
 shellOutput :: Text -> IO Text
 shellOutput x = runSh x >>= \case
@@ -107,33 +100,5 @@ gitCommitRefence (GitCommitOffestReference) = do
 printString :: String -> IO ()
 printString = print
 
-
-
--- parseFileReference :: Parser FileReference
--- parseFileReference = do
---   z <- between (string "{{" >> optional space >> string "file" >> space) (string "}}") parseFileAndLimits
---   case (z) of
---     (fPath, Just lStart, Just lEnd) -> return $ FileReference fPath (Just (lStart, lEnd))
---     (fPath, Nothing, Nothing) -> return $ FileReference fPath Nothing
---     _ -> fail "Unable to read start and end file reference"
-
--- parseGitDiffReference :: Parser GitDiffReference
--- parseGitDiffReference = do
---   z <- string "{{" >> optional space >> string "gitDiff" >> space >> many (noneOf " ")
---   _ <- many (noneOf "}}")
---   return $ GitDiffReference $ cs z
-
--- parseShellOutputTag :: Parser ShellOutput
--- parseShellOutputTag = do
---   z <- string "{{{{" >> optional space >> string "shellOutput" >> space >> many (noneOf "}}}}}")
---   _ <- string "}}}"
---   return $ ShellOutput $ cs z
-
 return2x :: (Monad m, Monad m2) => a -> m (m2 a)
 return2x = return . return
-
--- return $! unsafePerformIO $ do
---       print ("hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm" :: String)
--- () <- unsafePerformIO $! do
---       error ("yolo" :: String)
-      -- _ <- many anyChar >>= fail . ("Remainng: "++)

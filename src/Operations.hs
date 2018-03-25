@@ -8,26 +8,18 @@ module Operations (
 
 import Operations.Parsers
 import Hart
---import Render
 import Git
 import GHCi
 import Text.Parsec.String
 import Data.Either.Extra
 import Data.Text (lines, unlines)
---import Data.String.Conversions
---import Data.Text.Lazy.IO hiding (hPutStr)
---import Data.Text.Lazy (toStrict)
---import Control.Monad.Trans
 import Turtle (ExitCode(..))
 import Text.Printf
 
 import Text.Parsec hiding (parserTrace)
---import Text.Parsec.String
 import Control.Monad.Identity (guard)
 import Control.Exception as Excp
 import System.IO.Error
---import Data.Either.Extra
---import Data.Foldable
 
 class Operation a where
   parse :: Parser a
@@ -108,6 +100,3 @@ instance Operation GHCiReference where
   parse = GHCiReference . cs <$> parseGhciTag
   render (GHCiReference x ) = lift $
     (Right . (<> "\n````") . ((<>) "````\n") )  <$> runGhci x
--- instance Operation SectionHeaderReferenc where
---   parse = do
---   render () = do
