@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dc941b768a7283cf0583113902b061cc9c4a4c4ca282d741ce6d55673ea7f304
+-- hash: ba37dc0cc8e2d84ad0f8a33227e06ba4bbcbdae635d05862f07f5efc3a006e29
 
 name:           app
 version:        0.1.0.0
@@ -49,6 +49,7 @@ executable app
       GitTextPartial
       Hart
       Operations
+      Operations.Parsers
       QuasiText
       Render
       Section
@@ -93,6 +94,7 @@ executable test
       Hart
       Main
       Operations
+      Operations.Parsers
       QuasiText
       Render
       Section
