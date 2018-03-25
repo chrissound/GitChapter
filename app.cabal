@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ba37dc0cc8e2d84ad0f8a33227e06ba4bbcbdae635d05862f07f5efc3a006e29
+-- hash: b9fa31d010bc5d6aec247ec0d2e7579b00fe50466406c6d01e2b11842e4cc0f1
 
 name:           app
 version:        0.1.0.0
@@ -44,6 +44,7 @@ executable app
   other-modules:
       BlogLiterately
       Example
+      FileSection
       GHCi
       Git
       GitTextPartial
@@ -88,6 +89,7 @@ executable test
   other-modules:
       BlogLiterately
       Example
+      FileSection
       GHCi
       Git
       GitTextPartial

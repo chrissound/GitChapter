@@ -7,6 +7,7 @@ module Operations (
   )where
 
 import Operations.Parsers
+import FileSection
 import Hart
 import Git
 import GHCi
@@ -100,3 +101,19 @@ instance Operation GHCiReference where
   parse = GHCiReference . cs <$> parseGhciTag
   render (GHCiReference x ) = lift $
     (Right . (<> "\n````") . ((<>) "````\n") )  <$> runGhci x
+
+instance Operation FileSection where
+  parse = do
+    (f,s) <- between (string "{{" >> optional space >> string "fileSection" >> space) (string "}}")
+      (do
+        f <- many (noneOf " }")
+        _ <- space
+        s <- many (noneOf " }")
+        _ <- optional space
+        return $ (f, s)
+      )
+    return $ FileSection f s
+  render (FileSection f s) = do
+    lift $ fileRef (FileReference f $ FileLineRange Nothing) >>= \case
+      Right lns -> Right <$> getSection (cs s) (Data.Text.lines lns)
+      Left e -> return $ Left e

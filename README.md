@@ -60,3 +60,5 @@ https://github.com/chrissound/NextUpHarticle/blob/master/compiledArticle.md
 ## Need help?
 As this is a new project, if you hit any issues or need help setting anything up - please don't hesitate to post a github issue!  :)
 
+## Acknowledgements
+This project uses some functionality from https://github.com/owickstrom/pandoc-include-code

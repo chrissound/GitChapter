@@ -42,11 +42,11 @@ shellOutput x = runSh x >>= \case
 
 isPossibleRefPresent :: (ConvertibleStrings a Text, ConvertibleStrings a String, Functor t, Foldable t) => t a -> Maybe PossibleTag
 isPossibleRefPresent lns = asum $
-  (\x -> case parse' parsePossibleTag "possibleTag" (cs x) of
-      Nothing -> Nothing
-      Just pT -> case parseLine $ cs x of
-        Just _ -> Nothing
-        Nothing -> Just pT) <$> lns
+  (\x -> (parse' parsePossibleTag "possibleTag" . cs) x
+      >>= (case parseLine $ cs x of
+            Just _ -> const Nothing
+            Nothing -> Just)
+  ) <$> lns
 
 renderTemplate :: Text -> Either String [PreLineOutput]
 renderTemplate x =
@@ -68,6 +68,7 @@ parseLine x = do
   let xStr = convertString x :: String
   case asum [
           Reference' <$> (parse' Ops.parse "file reference" xStr :: Maybe FileReference)
+        , Reference' <$> (parse' Ops.parse "file reference" xStr :: Maybe FileSection)
         , Reference' <$> (parse' Ops.parse "git diff tag" xStr :: Maybe GitDiffReference)
         , Reference' <$> (parse' Ops.parse "git commit offset" xStr :: Maybe GitCommitOffestReference)
         , Reference' <$> (parse' Ops.parse "shellOutput tag" xStr :: Maybe ShellOutput)

@@ -32,6 +32,7 @@ hUnitTests = test [
     "testParseSectionHeader"    ~: True ~=? testParseSectionHeader
   , "testParseFileReference"    ~: True ~=? testParseFileReference
   , "testParseGhci"             ~: True ~=? testParseGhci
+  , "testParseFileSection"      ~: testParseFileSection
   , "testMultiLineXyz"          ~: True ~=? testMultiLineXyz
   , "testMultiLineXyz2"         ~: True ~=? testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
@@ -167,3 +168,10 @@ testing123|] :: Text
       else do
         return $ sectionExpected ~=? sections
     Left e -> error $ show e
+
+testParseFileSection :: Test
+testParseFileSection = do
+  let input = "{{fileSection src/abc xyz}}"
+  case (TPar.parse parse "fileRefTest" input) of
+        Right fs -> fs ~=? (FileSection "src/abc" "xyz")
+        Left e -> error $ show e

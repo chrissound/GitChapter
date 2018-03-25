@@ -44,7 +44,7 @@ runGhci expr =  do
                 killThread tErrId
                 return $ cs $! x ++ y
           )
-      let final = T.concat ( zipWith f (inputLines :: [Text]) (output :: [Text]) :: [Text])
+      let final = T.concat ( zipWith ghciPrompt (inputLines :: [Text]) (output :: [Text]) :: [Text])
       terminateProcess ph
       pure $ T.strip $ cs $ final
     _ -> error "Invaild GHCI process"
@@ -58,9 +58,9 @@ trimPreEndLines = T.dropWhile isEof
 trimEndLines :: Text -> Text
 trimEndLines = T.dropWhileEnd isEof
 
-f :: Text -> Text -> Text
-f i "\n" = f i ""
-f i "" = "ghci> " <> i
+ghciPrompt :: Text -> Text -> Text
+ghciPrompt i "\n" = ghciPrompt i ""
+ghciPrompt i "" = "ghci> " <> i
          <> "\n"
-f i o = "ghci> " <> i
+ghciPrompt i o = "ghci> " <> i
         <> "\n      " <> (trimEndLines . trimPreEndLines $ o) <> "\n"
