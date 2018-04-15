@@ -17,6 +17,10 @@ Chapter3.md / commit6
 
 This also means that if you (author) want to `amend` an old chapter / code, you do a git rebase, change the code, recompile, and render - and that's it! No need to modify anything else as the chapter files only store references relating to files / diffs.
 
+## Diagram / demo illustratino: 
+
+![demo](demo.png)
+
 ## Similar projects of potential interest
 https://byorgey.wordpress.com/blogliterately/
 http://www.andrevdm.com/posts/2018-02-05-hakyll-code-build-include-compiler.html
@@ -62,7 +66,6 @@ Also using <https://github.com/jgm/pandoc> will allow you to generate HTML from 
 - https://github.com/chrissound/GentleIntroductionToMonadTransformers
   Output available at: https://trycatchchris.co.uk/post/view/Hart-article-A-Gentle-Introduction-To-Monad-Transformers
 
-![Screenshot](demo.jpg)
 
 ## Need help?
 As this is a new project, if you hit any issues or need help setting anything up - please don't hesitate to post a Github issue! :smile: 
