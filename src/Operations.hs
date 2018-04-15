@@ -100,7 +100,7 @@ instance Operation SectionHeaderReference where
 instance Operation GHCiReference where
   parse = GHCiReference . cs <$> parseGhciTag
   render (GHCiReference x ) = lift $
-    (Right . (<> "\n````") . ((<>) "````\n") )  <$> runGhci x
+    (Right . (<> "\n````Haskell") . ((<>) "````\n") )  <$> runGhci x
 
 instance Operation FileSection where
   parse = do
@@ -113,7 +113,11 @@ instance Operation FileSection where
         return $ (f, s)
       )
     return $ FileSection f s
-  render (FileSection f s) = do
+  render fs@(FileSection f s) = do
     lift $ fileRef (FileReference f $ FileLineRange Nothing) >>= \case
-      Right lns -> Right <$> getSection (cs s) (Data.Text.lines lns)
+      Right lns -> do
+        section <- getSection (cs s) (Data.Text.lines lns)
+        case length $ Data.Text.lines section of
+          0 -> return $ Left $ show fs ++ " - FileSection returned no text"
+          _ -> return $ Right section
       Left e -> return $ Left e

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BangPatterns #-}
 module FileSection where
 
 -- Mozilla Public License Version 2.0
@@ -393,5 +394,6 @@ isSnippetEnd = isSnippetTag "end"
 
 getSection :: Monad m => Text -> [Text] -> m Text
 getSection name ls = do
-      let (_, start) = Prelude.break (isSnippetStart name) ls
-      return . Text.unlines $ (Prelude.takeWhile (not . isSnippetEnd name) (Prelude.drop 1 start))
+  let (_, start) = Prelude.break (isSnippetStart name) ls
+  return . Text.unlines $
+    (Prelude.takeWhile (not . isSnippetEnd name) (Prelude.drop 1 start))
