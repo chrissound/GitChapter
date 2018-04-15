@@ -16,6 +16,7 @@ import Data.Either.Extra
 import Data.Text (lines, unlines)
 import Turtle (ExitCode(..))
 import Text.Printf
+import Control.Arrow
 
 import Text.Parsec hiding (parserTrace)
 import Control.Monad.Identity (guard)
@@ -98,8 +99,8 @@ instance Operation SectionHeaderReference where
    return $ Right $ cs $ prefix ++ "Section " ++ show section ++ suffix
 
 instance Operation GHCiReference where
-  parse = GHCiReference . cs <$> parseGhciTag
-  render (GHCiReference x ) = lift $
+  parse = (\(x, y) -> GHCiReference x y) <$> (first cs . second (cs <$>)) <$> parseGhciTag
+  render (GHCiReference x _) = lift $
     (Right . (<> "\n````Haskell") . ((<>) "````\n") )  <$> runGhci x
 
 instance Operation FileSection where

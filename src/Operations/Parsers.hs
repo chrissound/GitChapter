@@ -8,10 +8,11 @@ import Hart
 import Text.Parsec.String
 import Data.Either.Extra
 import Safe
+import Data.Bool
 
 import Text.Parsec hiding (parserTrace)
 
-data SectionBlock = SectionRaw Text | SectionGHCi Text deriving (Show, Eq)
+data SectionBlock = SectionRaw Text | SectionGHCi Text (Maybe Text) deriving (Show, Eq)
 data FileLineRange = FileLineRange (Maybe(Int, Int)) deriving (Show, Eq)
 data FileReference = FileReference String FileLineRange deriving (Show, Eq)
 data FileSection = FileSection String String deriving (Show, Eq)
@@ -20,7 +21,7 @@ data GitCommitOffestReference = GitCommitOffestReference deriving (Show, Eq)
 data ShellOutput = ShellOutput Text deriving (Show, Eq)
 data PossibleTag = PossibleTag String deriving (Show, Eq)
 data SectionHeaderReference = SectionHeaderReference String String deriving (Show, Eq)
-data GHCiReference = GHCiReference Text deriving (Show, Eq)
+data GHCiReference = GHCiReference Text (Maybe Text) deriving (Show, Eq)
 
 parseSection :: Parser [SectionBlock]
 parseSection =
@@ -29,9 +30,9 @@ parseSection =
     Nothing -> do
       isGhci <- optionMaybe parseGhciTag
       block <- case isGhci of
-            Just ghci' -> return $ SectionGHCi $ cs ghci'
+            Just ghci' -> return $ SectionGHCi ((cs . fst) $ ghci') (((cs <$>) . snd) $ ghci')
             Nothing -> do
-              manyTill anyToken (lookAhead $ try $ choice [parseGhciTag, eofString])
+              manyTill anyToken (lookAhead $ try $ choice [const () <$> parseGhciTag, const () <$> eofString])
               >>= return . SectionRaw . cs
       optionMaybe parseSection >>= \case
         Just sndBlock -> return ( block : sndBlock)
@@ -45,13 +46,15 @@ eofString = do
 parserTrace :: (Stream s m t, Show t) => String -> ParsecT s u m ()
 parserTrace _ = return ()
 
-parseGhciTag :: Parser String
+parseGhciTag :: Parser (String, (Maybe String))
 parseGhciTag = do
     parserTrace "DEBUG INIT parseGhciTag"
-    z <- string "{{{" >> optional space >> string "ghci" >> optional space >> many (noneOf "}}}")
+    _ <- string "{{{" >> optional space >> string "ghci" >> optional (char ' ')
+    s <- optionMaybe $ try $ manyTill anyToken (endOfLine)
+    z <- many (noneOf "}}}")
     _ <- string "}}}"
     parserTrace "DEBUG SUCCESS parseGhciTag"
-    return $ cs z
+    return (z :: String, bool (s) Nothing (s == Just ""))
 
 parseFileAndLimits :: Parser (String, Maybe Int, Maybe Int)
 parseFileAndLimits = do

@@ -21,6 +21,7 @@ import QuasiText
 import GHCi
 import Debug.Trace
 import Operations 
+import Control.Monad.Trans
 
 main :: IO ()
 main = do
@@ -33,8 +34,8 @@ hUnitTests = test [
   , "testParseFileReference"    ~: True ~=? testParseFileReference
   , "testParseGhci"             ~: True ~=? testParseGhci
   , "testParseFileSection"      ~: testParseFileSection
-  , "testMultiLineXyz"          ~: True ~=? testMultiLineXyz
-  , "testMultiLineXyz2"         ~: True ~=? testMultiLineXyz2
+  , "testMultiLineXyz"          ~: testMultiLineXyz
+  , "testMultiLineXyz2"         ~: testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
   , "testRunGhci"               ~: testGhciRun
   , "testRunGhci2"              ~: testGhciRun2
@@ -74,10 +75,23 @@ testParseGhci = do
           , "abcxyz}}}"
           ]
   case (TPar.parse parse "" t1) of
-        Right (GHCiReference x) -> x == "\\nhmmm\\nhmmm2\\nabcxyz"
+        Right (GHCiReference x Nothing) -> x == "\\nhmmm\\nhmmm2\\nabcxyz"
+        Right (GHCiReference _ n) -> Nothing == n
         Left e -> error $ show e
 
-testMultiLineXyz :: Bool
+testParseGhci2 :: Bool
+testParseGhci2 = do
+  let t1 = concat $ intersperse "\\n" [
+            "{{{ghci"
+          , "hmmm"
+          , "hmmm2"
+          , "abcxyz}}}"
+          ]
+  case (TPar.parse parse "" t1) of
+        Right (GHCiReference x _ ) -> x == "\\nhmmm\\nhmmm2\\nabcxyz"
+        Left e -> error $ show e
+
+testMultiLineXyz :: Test
 testMultiLineXyz = do
   let t2 = concat $ intersperse "\\n" [
             "{{{ghci"
@@ -85,15 +99,13 @@ testMultiLineXyz = do
           , "}}}"
           ]
   case (TPar.parse parseSection "testMultiLineXyz" t2) of
-        (Right (SectionGHCi x:[])) -> unsafePerformIO $ do
-          let expe = "\\nhmmm\\n"
-          return $ x == expe
+        (Right (SectionGHCi x _:[])) -> "\\nhmmm\\n" ~=? x
         (Left e) -> error $ show e
         (_) -> unsafePerformIO $ do
-          return False
+          assertFailure "derp"
 
 
-testMultiLineXyz2 :: Bool
+testMultiLineXyz2 :: Test
 testMultiLineXyz2 = do
   let t2 = concat $ intersperse "\\n" [
             "abcxyz"
@@ -104,14 +116,18 @@ testMultiLineXyz2 = do
           , "abcxyz"
           ]
   case (TPar.parse parseSection "testMultiLineXyz" t2) of
-        (Right (SectionRaw x:SectionGHCi y:SectionRaw x':[])) -> unsafePerformIO $ do
-          return $
-               (x == "abcxyz\\n")
-            && (x' == "\\nabcxyz")
-            && (y == "\\nhmm\\nhmm\\n")
-        (Left e) -> error $ show e
+        (Right (SectionRaw x:SectionGHCi y _:SectionRaw x':[])) -> unsafePerformIO $ do
+          return $ TestList [
+               x ~=? "abcxyz\\n"
+             , x' ~=? "\\nabcxyz"
+             , y ~=? "\\nhmm\\nhmm\\n"
+             ]
+        (Left e) -> hunitFailErr e
         _ -> unsafePerformIO $ do
-          return False
+          assertFailure "derp"
+
+hunitFailErr :: Show a => a -> Test
+hunitFailErr e = TestCase $ liftIO ( Test.HUnit.assertFailure $ show e)
 
 testRealWorldSectionBlock :: Bool
 testRealWorldSectionBlock = do
@@ -151,7 +167,7 @@ testRenderTemplate = do
 testing123|] :: Text
   let sectionExpected = [
           SectionRaw "### Introducing Side-Effects\n\n"
-        , SectionGHCi "  :t head\n  4 + 4\n"
+        , SectionGHCi "  :t head\n  4 + 4\n" Nothing
         , SectionRaw "\n\ntesting123"
         ]
   unsafePerformIO $ case (TPar.parse parseSection "parseSection" $ cs input) of
@@ -167,7 +183,7 @@ testing123|] :: Text
         return $ textExpected ~=? transformInnerSection sections
       else do
         return $ sectionExpected ~=? sections
-    Left e -> error $ show e
+    Left e -> return $ hunitFailErr e
 
 testParseFileSection :: Test
 testParseFileSection = do
