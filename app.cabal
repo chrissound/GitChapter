@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b9fa31d010bc5d6aec247ec0d2e7579b00fe50466406c6d01e2b11842e4cc0f1
+-- hash: 0a548d7f175fa1c1e7df56df89ecc383a8463cbb31ca58ffa286a27757dbc297
 
 name:           app
 version:        0.1.0.0
@@ -46,6 +46,7 @@ executable app
       Example
       FileSection
       GHCi
+      GHCiSession
       Git
       GitTextPartial
       Hart
@@ -91,6 +92,7 @@ executable test
       Example
       FileSection
       GHCi
+      GHCiSession
       Git
       GitTextPartial
       Hart

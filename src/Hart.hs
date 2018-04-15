@@ -6,6 +6,7 @@ module Hart
   , module Data.String.Conversions
   , Text
   , module Data.Monoid
+  , module GHCiSession
   ) where
 
 import Data.Monoid
@@ -14,14 +15,17 @@ import Data.String.Conversions
 import Control.Monad.Trans.Reader (runReaderT, ReaderT, ask)
 import Control.Monad.Trans (lift)
 import Turtle (ExitCode(..), shellStrictWithErr, empty)
+import Control.Monad.Trans.State.Lazy
+import GHCiSession
 
 data HartConfig = HartConfig String String Integer
+data HartState = HartState [GHCiSession]
 
 hartConfigFromHash, hartConfigUntilHash :: HartConfig -> String
 hartConfigFromHash (HartConfig h _ _) = h
 hartConfigUntilHash (HartConfig _ h _) = h
 
-type Hart = ReaderT HartConfig IO
+type Hart = ReaderT HartConfig (StateT HartState IO)
 
 (++<>) :: (
   ConvertibleStrings a Text,

@@ -17,6 +17,7 @@ import Data.Text (lines, unlines)
 import Turtle (ExitCode(..))
 import Text.Printf
 import Control.Arrow
+import Control.Monad.Trans
 
 import Text.Parsec hiding (parserTrace)
 import Control.Monad.Identity (guard)
@@ -40,7 +41,7 @@ instance Operation FileReference where
       (fPath, Just lStart, Just lEnd) -> return $ FileReference fPath (FileLineRange $ Just (lStart, lEnd))
       (fPath, Nothing, Nothing) -> return $ FileReference fPath (FileLineRange Nothing)
       _ -> fail "Unable to read start and end file reference"
-  render x = lift $ maybeToEither "" <$> fileReferenceContent x
+  render x = liftIO $ maybeToEither "" <$> fileReferenceContent x
 
 fileReferenceContent :: FileReference -> IO (Maybe Text)
 fileReferenceContent (FileReference p flRange) =
@@ -70,7 +71,7 @@ instance Operation ShellOutput where
     z <- string "{{{{" >> optional space >> string "shellOutput" >> space >> many (noneOf "}}}}}")
     _ <- string "}}}"
     return $ ShellOutput $ cs z
-  render (ShellOutput x) = lift (runSh x) >>= pure <$> \case
+  render (ShellOutput x) = liftIO (runSh x) >>= pure <$> \case
     (ExitSuccess,t,_) -> Right $ cs t
     (ExitFailure n,t,e) -> Left $ cs $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
 
@@ -100,8 +101,17 @@ instance Operation SectionHeaderReference where
 
 instance Operation GHCiReference where
   parse = (\(x, y) -> GHCiReference x y) <$> (first cs . second (cs <$>)) <$> parseGhciTag
-  render (GHCiReference x _) = lift $
-    (Right . (<> "\n````Haskell") . ((<>) "````\n") )  <$> runGhci x
+  render (GHCiReference x s) = liftIO
+    $
+    (Right . (<> "\n````Haskell") . ((<>) "````\n") )
+    <$>
+    (
+      case s of
+        Just s' -> do
+          error $ show s'
+          --runGhciSession s x
+        Nothing -> runGhci x
+    )
 
 instance Operation FileSection where
   parse = do
@@ -115,7 +125,7 @@ instance Operation FileSection where
       )
     return $ FileSection f s
   render fs@(FileSection f s) = do
-    lift $ fileRef (FileReference f $ FileLineRange Nothing) >>= \case
+    liftIO $ fileRef (FileReference f $ FileLineRange Nothing) >>= \case
       Right lns -> do
         section <- getSection (cs s) (Data.Text.lines lns)
         case length $ Data.Text.lines section of

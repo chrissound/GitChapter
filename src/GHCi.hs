@@ -18,35 +18,41 @@ import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar, modifyMVar_, ne
 import System.Timeout (timeout)
 import Data.Maybe
 
+runGhciSession :: GHCiSession -> Text -> IO Text 
+runGhciSession (GHCiSession ghci) expr = do
+  let (pin, pout, perr, _) = ghci
+  let inputLines = filter (/= "") (T.lines expr)
+  output <- do
+    forM inputLines
+      (\i -> do
+          let script = "putStrLn " ++ show magic ++ "\n"
+                        ++ cs i ++ "\n"
+                        ++ "putStrLn " ++ show magic ++ "\n"
+          do
+            stdoutMVar <- newEmptyMVar
+            stderrMVar <- newMVar ""
+            hPutStr pin script
+            hFlush pin
+            tOutId <- forkIO $ extract' pout >>= putMVar stdoutMVar
+            tErrId <- forkIO $ do
+              let f' = hGetLine perr >>= (\l -> modifyMVar_ stderrMVar (return . (++ (l ++ "\n"))))
+              forever f'
+            x <- timeout (1 * (10^6)) (takeMVar stdoutMVar) >>= return . fromMaybe "***ghci timed out"
+            y <- timeout (1 * (10^6)) (takeMVar stderrMVar) >>= return . fromMaybe "***ghci timed out"
+            killThread tOutId
+            killThread tErrId
+            return $ cs $! x ++ y
+      )
+  let final = T.concat ( zipWith ghciPrompt (inputLines :: [Text]) (output :: [Text]) :: [Text])
+  pure $ T.strip $ cs $ final
+
 runGhci :: Text -> IO Text
 runGhci expr =  do
-  let inputLines = filter (/= "") (T.lines expr)
   createProcess ((proc "ghci" ["-v0", "-ignore-dot-ghci"]) {std_in=CreatePipe, std_out=CreatePipe, std_err=CreatePipe}) >>= \case
     (Just pin, Just pout, Just perr, ph) -> do
-      output <- do
-        forM inputLines
-          (\i -> do
-              let script = "putStrLn " ++ show magic ++ "\n"
-                            ++ cs i ++ "\n"
-                            ++ "putStrLn " ++ show magic ++ "\n"
-              do
-                stdoutMVar <- newEmptyMVar
-                stderrMVar <- newMVar ""
-                hPutStr pin script
-                hFlush pin
-                tOutId <- forkIO $ extract' pout >>= putMVar stdoutMVar
-                tErrId <- forkIO $ do
-                  let f' = hGetLine perr >>= (\l -> modifyMVar_ stderrMVar (return . (++ (l ++ "\n"))))
-                  forever f'
-                x <- timeout (1 * (10^6)) (takeMVar stdoutMVar) >>= return . fromMaybe "***ghci timed out"
-                y <- timeout (1 * (10^6)) (takeMVar stderrMVar) >>= return . fromMaybe "***ghci timed out"
-                killThread tOutId
-                killThread tErrId
-                return $ cs $! x ++ y
-          )
-      let final = T.concat ( zipWith ghciPrompt (inputLines :: [Text]) (output :: [Text]) :: [Text])
+      r <- runGhciSession (GHCiSession (pin, pout, perr, ph)) expr
       terminateProcess ph
-      pure $ T.strip $ cs $ final
+      return  r
     _ -> error "Invaild GHCI process"
 
 isEof :: Char -> Bool

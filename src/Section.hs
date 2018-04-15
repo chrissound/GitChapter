@@ -13,8 +13,10 @@ import Prelude hiding (lines)
 import qualified Control.Foldl as Fold
 import Data.String.Conversions
 import Filesystem.Path.CurrentOS (encodeString)
-import Render
 import Text.Regex.Posix
+import Control.Monad.Trans.State.Lazy
+
+import Render
 import Git
 import Hart
 import Safe
@@ -54,7 +56,10 @@ compileSection filePrefix = do
               renderTemplate <$> readTextFile fP' >>= \case
                 Right rendered -> do
                   let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
-                  runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc >>= \case
+                  evalStateT
+                    (runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc)
+                    (HartState [])
+                  >>= \case
                     Right x -> do
                       appendFile compiledOutput $ cs x
                       pure $ Right $ "Successful compilation for section " <> filePrefix
