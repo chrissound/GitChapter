@@ -15,6 +15,7 @@ import Data.String.Conversions
 import Filesystem.Path.CurrentOS (encodeString)
 import Text.Regex.Posix
 import Control.Monad.Trans.State.Lazy
+import Data.HashMap.Strict as HM (empty)
 
 import Render
 import Git
@@ -58,7 +59,7 @@ compileSection filePrefix = do
                   let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
                   evalStateT
                     (runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc)
-                    (HartState [])
+                    (GitChapterState HM.empty)
                   >>= \case
                     Right x -> do
                       appendFile compiledOutput $ cs x

@@ -61,7 +61,8 @@ transformInnerSection :: [SectionBlock] -> [Text]
 transformInnerSection ([]) = []
 transformInnerSection (x:xs) = case x of
         SectionRaw b -> Data.Text.lines b ++ (transformInnerSection xs)
-        SectionGHCi b _ -> "{{{ghci\n" <> b <> "}}}" : (transformInnerSection xs)
+        SectionGHCi b Nothing -> "{{{ghci\n" <> b <> "}}}" : (transformInnerSection xs)
+        SectionGHCi b (Just s) -> "{{{ghci " <> s <> "\n" <> b <> "}}}" : (transformInnerSection xs)
 
 parseLine :: Text -> Maybe Reference'
 parseLine x = do

@@ -28,6 +28,7 @@ dependencies:
 - template-haskell
 - pretty-simple
 - pandoc-include-code
+- unordered-containers
 
 executables:
   app:

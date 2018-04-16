@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0a548d7f175fa1c1e7df56df89ecc383a8463cbb31ca58ffa286a27757dbc297
+-- hash: 267756824d6af06e58e05704380442242e52f145521fe79adaf97cba60878e3e
 
 name:           app
 version:        0.1.0.0
@@ -41,6 +41,7 @@ executable app
     , transformers
     , turtle
     , unix
+    , unordered-containers
   other-modules:
       BlogLiterately
       Example
@@ -87,6 +88,7 @@ executable test
     , transformers
     , turtle
     , unix
+    , unordered-containers
   other-modules:
       BlogLiterately
       Example

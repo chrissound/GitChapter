@@ -18,6 +18,13 @@ import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar, modifyMVar_, ne
 import System.Timeout (timeout)
 import Data.Maybe
 
+initializeGHCiSession :: IO GHCiSession
+initializeGHCiSession = do
+  createProcess ((proc "ghci" ["-v0", "-ignore-dot-ghci"]) {std_in=CreatePipe, std_out=CreatePipe, std_err=CreatePipe})
+  >>= \case
+    (Just pin, Just pout, Just perr, ph) -> return (GHCiSession (pin, pout, perr, ph))
+    _ -> error "Invaild GHCI process"
+
 runGhciSession :: GHCiSession -> Text -> IO Text 
 runGhciSession (GHCiSession ghci) expr = do
   let (pin, pout, perr, _) = ghci
@@ -48,12 +55,10 @@ runGhciSession (GHCiSession ghci) expr = do
 
 runGhci :: Text -> IO Text
 runGhci expr =  do
-  createProcess ((proc "ghci" ["-v0", "-ignore-dot-ghci"]) {std_in=CreatePipe, std_out=CreatePipe, std_err=CreatePipe}) >>= \case
-    (Just pin, Just pout, Just perr, ph) -> do
-      r <- runGhciSession (GHCiSession (pin, pout, perr, ph)) expr
-      terminateProcess ph
-      return  r
-    _ -> error "Invaild GHCI process"
+  g@(GHCiSession (_,_,_,ph)) <- initializeGHCiSession
+  t <- runGhciSession g expr
+  terminateProcess ph
+  return t
 
 isEof :: Char -> Bool
 isEof = (== '\n')

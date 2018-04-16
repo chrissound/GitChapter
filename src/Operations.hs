@@ -18,6 +18,8 @@ import Turtle (ExitCode(..))
 import Text.Printf
 import Control.Arrow
 import Control.Monad.Trans
+import Control.Monad.Trans.State.Lazy
+import Data.HashMap.Strict
 
 import Text.Parsec hiding (parserTrace)
 import Control.Monad.Identity (guard)
@@ -101,16 +103,21 @@ instance Operation SectionHeaderReference where
 
 instance Operation GHCiReference where
   parse = (\(x, y) -> GHCiReference x y) <$> (first cs . second (cs <$>)) <$> parseGhciTag
-  render (GHCiReference x s) = liftIO
-    $
+  render (GHCiReference x s) = 
     (Right . (<> "\n````Haskell") . ((<>) "````\n") )
     <$>
-    (
+    ( do
+      liftIO $ putStrLn $ "Using GHCI session of: " ++ show s
       case s of
-        Just s' -> do
-          error $ show s'
-          --runGhciSession s x
-        Nothing -> runGhci x
+        Just s' -> (do
+          (GitChapterState gcs) <- lift $ get
+          ghci <- case Data.HashMap.Strict.lookup (cs  s') gcs of
+            Just s'' -> pure $ s''
+            Nothing -> liftIO $ initializeGHCiSession
+          lift $ put (GitChapterState (insert (cs s') ghci gcs))
+          liftIO $ runGhciSession ghci x
+          )
+        Nothing -> liftIO $ runGhci x
     )
 
 instance Operation FileSection where

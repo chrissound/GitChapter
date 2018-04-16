@@ -159,15 +159,15 @@ testRenderTemplate :: Test
 testRenderTemplate = do
   let input = [str|### Introducing Side-Effects
 
-{{{ghci abcxyz
-  :t head
-  4 + 4
+{{{ghci eitherLeftOrRight
+:t head
+4 + 4
 }}}
 
 testing123|] :: Text
   let sectionExpected = [
           SectionRaw "### Introducing Side-Effects\n\n"
-        , SectionGHCi "  :t head\n  4 + 4\n" (Just "abcxyz")
+        , SectionGHCi ":t head\n4 + 4\n" (Just "eitherLeftOrRight")
         , SectionRaw "\n\ntesting123"
         ]
   unsafePerformIO $ case (TPar.parse parseSection "parseSection" $ cs input) of
@@ -176,7 +176,7 @@ testing123|] :: Text
         let textExpected = [
                 "### Introducing Side-Effects"
               , ""
-              , "{{{ghci\n  :t head\n  4 + 4\n}}}"
+              , "{{{ghci eitherLeftOrRight\n:t head\n4 + 4\n}}}"
               , ""
               , ""
               , "testing123"]

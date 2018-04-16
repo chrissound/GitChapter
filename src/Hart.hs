@@ -2,11 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hart
-  ( module Hart, ask, lift, runReaderT
+  ( module Hart
+  , ask, lift, runReaderT
   , module Data.String.Conversions
   , Text
   , module Data.Monoid
   , module GHCiSession
+  , module Data.HashMap.Strict
   ) where
 
 import Data.Monoid
@@ -16,16 +18,18 @@ import Control.Monad.Trans.Reader (runReaderT, ReaderT, ask)
 import Control.Monad.Trans (lift)
 import Turtle (ExitCode(..), shellStrictWithErr, empty)
 import Control.Monad.Trans.State.Lazy
+import Data.HashMap.Strict (HashMap, lookup)
+
 import GHCiSession
 
 data HartConfig = HartConfig String String Integer
-data HartState = HartState [GHCiSession]
+data GitChapterState = GitChapterState (HashMap String GHCiSession)
 
 hartConfigFromHash, hartConfigUntilHash :: HartConfig -> String
 hartConfigFromHash (HartConfig h _ _) = h
 hartConfigUntilHash (HartConfig _ h _) = h
 
-type Hart = ReaderT HartConfig (StateT HartState IO)
+type Hart = ReaderT HartConfig (StateT GitChapterState IO)
 
 (++<>) :: (
   ConvertibleStrings a Text,
