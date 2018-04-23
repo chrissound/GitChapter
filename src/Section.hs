@@ -32,9 +32,7 @@ getSectionHashOffsets (-1) = do
       Just v' -> return $ Right (v', "")
     _ -> return $ Left "derp"
 getSectionHashOffsets filePrefix = do
-  let v = find (prefix $ fromString $ dir ++ (show filePrefix ++ "_")) (fromString dir)
-        where
-          dir = "sections/"
+  let v = find (prefix $ fromString $ cs articleDir ++ (show filePrefix ++ "_")) (fromString $ cs articleDir)
   fP <- fold (v) Fold.head
   case fP of
     Just fP' -> do
@@ -42,10 +40,10 @@ getSectionHashOffsets filePrefix = do
       gitPathCommitHash fP'' >>= \case
         Just cHash' -> return $ Right (cHash', fP')
         Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fP''
-    Nothing -> return $ Left "Nope"
+    Nothing -> return $ Left $ "No chater file found for chapter " ++ show filePrefix
 
-compileSection :: Text -> IO (Either String Text)
-compileSection filePrefix = do
+compileChapter :: Text -> IO (Either String Text)
+compileChapter filePrefix = do
   case readMay ( (cs filePrefix :: String) =~ ("([0-9]+)" :: String) ) :: Maybe Integer of
     Just sectionKey -> do
       cHashPrevious <- getSectionHashOffsets $ sectionKey - 1
@@ -63,7 +61,7 @@ compileSection filePrefix = do
                   >>= \case
                     Right x -> do
                       appendFile compiledOutput $ cs x
-                      pure $ Right $ "Successful compilation for section " <> filePrefix
+                      pure $ Right $ "Successful compilation for section " <> filePrefix <> "\n"
                     Left x -> sectionError sectionKey cHash' cHashPrevious' x
                 Left e -> sectionError sectionKey cHash' cHashPrevious' e
             _ -> return $ Left ":("

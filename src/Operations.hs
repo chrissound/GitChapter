@@ -104,7 +104,7 @@ instance Operation SectionHeaderReference where
 instance Operation GHCiReference where
   parse = (\(x, y) -> GHCiReference x y) <$> (first cs . second (cs <$>)) <$> parseGhciTag
   render (GHCiReference x s) = 
-    (Right . (<> "\n````Haskell") . ((<>) "````\n") )
+    (Right . ((<>) "```Haskell\n") . (<> "\n```") )
     <$>
     ( do
       liftIO $ putStrLn $ "Using GHCI session of: " ++ show s

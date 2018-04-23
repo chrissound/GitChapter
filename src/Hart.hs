@@ -31,6 +31,9 @@ hartConfigUntilHash (HartConfig _ h _) = h
 
 type Hart = ReaderT HartConfig (StateT GitChapterState IO)
 
+articleDir :: Text
+articleDir = "./chapters/"
+
 (++<>) :: (
   ConvertibleStrings a Text,
   ConvertibleStrings b Text

@@ -22,40 +22,39 @@ import Text.Regex.Posix
 work :: String -> IO ()
 work x = do
   cd $ fromString x
-  gitLsFiles "sections/" >>= \case
-    Nothing ->
-      error
-        "Found no relevant files within sections/ within the repository"
-    Just sections -> do
-      let sectionIndexes = getIndexFromSectionFilepath <$> sections
-      case (sequence $ readMay <$> sectionIndexes :: Maybe [Int]) of
+  gitLsFiles "chapters/" >>= \case
+    Nothing -> error "git ls-files failure"
+    Just chapters -> do
+      let chapterIndexes = getIndexFromChapterFilepath <$> chapters
+      case (sequence $ readMay <$> chapterIndexes :: Maybe [Int]) of
         Nothing -> do
           error $
-            "Unable to determine indexes for all section files which are of: " ++
-            show sections
-        Just sectionFiles -> do
-          putStrLn "Section files found:"
-          putStrLn $ "  " ++ show sections
+            "Unable to determine indexes for all chapter files which are of: " ++
+            show chapters
+        Just [] -> error "Found no relevant files within chapters/ within the repository"
+        Just chapterFiles -> do
+          putStrLn "Chapter files found:"
+          putStrLn $ "  " ++ show chapters
           putStrLn ""
           rmIfExists $ fromString compiledOutput
           forM_
-            sectionFiles
+            chapterFiles
             (\counter ->
-               compileSection (cs $ show counter) >>= \case
+               compileChapter (cs $ show counter) >>= \case
                  Left e -> do
-                   putStrLn $ "Error compiling section: " ++ show counter
+                   putStrLn $ "Error compiling chapter: " ++ show counter
                    error e
                  Right r -> do
-                   putStrLn $ "Compiled section : " ++ show counter
+                   putStrLn $ "Compiled chapter : " ++ show counter
                    putStrLn $ convertString r)
 
 rmIfExists :: Turtle.FilePath -> IO ()
 rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
 
-getIndexFromSectionFilepath :: String -> String
-getIndexFromSectionFilepath x = do
+getIndexFromChapterFilepath :: String -> String
+getIndexFromChapterFilepath x = do
   let (_, _, _, [v]) =
-        x =~ ("sections/(.[^_]*)_" :: String) :: ( String
+        x =~ ("chapters/(.[^_]*)_" :: String) :: ( String
                                                  , String
                                                  , String
                                                  , [String])
