@@ -27,7 +27,7 @@ http://www.andrevdm.com/posts/2018-02-05-hakyll-code-build-include-compiler.html
 http://howardism.org/Technical/Emacs/literate-devops.html
 
 ## Supported tags / features:
-`{{ chapterHeader }}` returns the text `Secton x` where x is the chapter number.
+`{{ chapterHeader }}` returns the text `Chapter x` where x is the chapter number.
 
 `{{ gitDiff path/to/file.sh }}` returns  a `git diff` of file.
 
