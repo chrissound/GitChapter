@@ -44,7 +44,8 @@ http://howardism.org/Technical/Emacs/literate-devops.html
 :t head
 4+4
 }}}
-``` will run the code within a GHCi session and output the results (thanks to https://github.com/byorgey/BlogLiterately). The optionalSessionId is a random string you can choose to 'persist' a GHCi process between tags.
+```
+will run the code within a GHCi session and output the results (thanks to https://github.com/byorgey/BlogLiterately). The optionalSessionId is a random string you can choose to 'persist' a GHCi process between tags.
 
 
 ## Limitations
