@@ -39,9 +39,12 @@ http://howardism.org/Technical/Emacs/literate-devops.html
 
 `{{{{ shellOutput command goes here }}}}` which would execute `command goes here` (in your shell) and output whatever is returned.
 
-`{{{ghci optionalSessionId
+```
+{{{ghci optionalSessionId
 :t head
-}}}` will run the code within a GHCi session and output the results (thanks to https://github.com/byorgey/BlogLiterately). The optionalSessionId is a random string you can choose to 'persist' a GHCi process between tags.
+4+4
+}}}
+``` will run the code within a GHCi session and output the results (thanks to https://github.com/byorgey/BlogLiterately). The optionalSessionId is a random string you can choose to 'persist' a GHCi process between tags.
 
 
 ## Limitations
