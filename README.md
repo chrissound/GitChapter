@@ -1,9 +1,11 @@
 # GitChapter
 
 ## What problem does this solve?
-Allows you to embed and reference various features within a format agnostic document, some relation to https://en.wikipedia.org/wiki/Literate_programming.
+Allows you to embed source code, shell output, and various other features within a format agnostic document, some relation to https://en.wikipedia.org/wiki/Literate_programming.
 
-A project would be structured as:
+## Project structure 
+
+A chapter file can reference one or more consecutive commits.
 
 ```
 Chapter1.md / commit1
@@ -15,7 +17,7 @@ Chapter3.md / commit6
             / commit7
 ```
 
-This also means that if you (author) want to `amend` an old chapter / code, you do a git rebase, change the code, recompile, and render - and that's it! No need to modify anything else as the chapter files only store references relating to files / diffs.
+To modify a previuos chapter / fix a source code error, you would : git rebase, change the code, recompile and render - and that's it!
 
 ## Diagram / demo illustratino: 
 
@@ -33,9 +35,9 @@ http://howardism.org/Technical/Emacs/literate-devops.html
 
 `{{ file path/to/file.sh }}` returns the entire content of file.
 
-`{{ gitCommitOffset }}` returns a special chapter's commit 'range'.
+`{{ fileSection path/to/file.hs main }}` like `file` but returns a section from a file (thanks to https://github.com/owickstrom/pandoc-include-code).
 
-`{{ fileSection path/to/file.hs main }}` returns a section from a file (thanks to https://github.com/owickstrom/pandoc-include-code).
+`{{ gitCommitOffset }}` returns a special chapter's commit 'range'.
 
 `{{{{ shellOutput command goes here }}}}` which would execute `command goes here` (in your shell) and output whatever is returned.
 
@@ -49,15 +51,16 @@ will run the code within a GHCi session and output the results (thanks to https:
 
 
 ## Limitations
-- Modifying 'older' chapter requires doing a  git rebase on that project - which may present some difficulty if you are collaborating with from others. However changes can be shared by using additional git branches.
-- There may be issues if you use text tags like `{{example}}` - there isn't any way to escape these at the moment. (TODO!)
+- Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaberation (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
+- Not able to escape tags - so there may be issues if you use text tags like `{{example}}`.
 
 ## Installation
-You would need to install GHC (the Haskell compiler) + stack. Will eventually provide a binary / docker image. 
 
-## How to use this? Instructions?
+    stack install gitchapter:exe:gitchapter
+
+## How do I create a project that can be rendered?
 Create a `chapters` directory in a git repository. Create a `x_Example.md` file with your relevant commits, where x is a 'chapter' number. You can then render a project by executing:
-`stack exec app -- /path/to/project` - this will generate a `compiledArticle.md` file from all the chapters.  
+`gitchapter /path/to/project` - this will generate a `compiledArticle.md` file from all the chapters.  
 
 Also using <https://github.com/jgm/pandoc> will allow you to generate HTML from markdown with a simple command like:
 `pandoc --from markdown_strict+backtick_code_blocks -s compiledArticle.md -o compiled.html`
