@@ -4,6 +4,8 @@
 {-# OPTIONS -Wno-type-defaults #-}
 {-# LANGUAGE LambdaCase #-}
 
+module Main where
+
 import Turtle hiding (e, f, header, o, s, x)
 
 import Control.Monad

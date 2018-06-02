@@ -1,4 +1,4 @@
-name: app
+name: gitchapter
 version: '0.1.0.0'
 author: Chris Stryczynski
 maintainer: Chris Stryczynski
@@ -31,9 +31,10 @@ dependencies:
 - unordered-containers
 
 executables:
-  app:
+  gitchapter:
     main: Main.hs
     source-dirs: src
   test:
     main: Test.hs
+    ghc-options: -main-is Test
     source-dirs: src

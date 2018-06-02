@@ -1,10 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.20.0.
+-- This file has been generated from package.yaml by hpack version 0.21.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 267756824d6af06e58e05704380442242e52f145521fe79adaf97cba60878e3e
+-- hash: 76417ebd705fc2f10a43454f2212c0cf1f155458f0fd6559dbbaeb2c8aefb539
 
-name:           app
+name:           gitchapter
 version:        0.1.0.0
 author:         Chris Stryczynski
 maintainer:     Chris Stryczynski
@@ -13,35 +13,8 @@ license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
 
-executable app
+executable gitchapter
   main-is: Main.hs
-  hs-source-dirs:
-      src
-  build-depends:
-      HUnit
-    , QuickCheck
-    , base >=4.9 && <4.11
-    , directory
-    , extra
-    , filepath
-    , foldl
-    , mtl
-    , optparse-applicative
-    , pandoc-include-code
-    , parsec
-    , pretty-simple
-    , process
-    , regex-pcre
-    , regex-posix
-    , safe
-    , string-conversions
-    , system-filepath
-    , template-haskell
-    , text
-    , transformers
-    , turtle
-    , unix
-    , unordered-containers
   other-modules:
       BlogLiterately
       Example
@@ -57,11 +30,7 @@ executable app
       Render
       Section
       Test
-      Paths_app
-  default-language: Haskell2010
-
-executable test
-  main-is: Test.hs
+      Paths_gitchapter
   hs-source-dirs:
       src
   build-depends:
@@ -89,6 +58,10 @@ executable test
     , turtle
     , unix
     , unordered-containers
+  default-language: Haskell2010
+
+executable test
+  main-is: Test.hs
   other-modules:
       BlogLiterately
       Example
@@ -104,5 +77,33 @@ executable test
       QuasiText
       Render
       Section
-      Paths_app
+      Paths_gitchapter
+  hs-source-dirs:
+      src
+  ghc-options: -main-is Test
+  build-depends:
+      HUnit
+    , QuickCheck
+    , base >=4.9 && <4.11
+    , directory
+    , extra
+    , filepath
+    , foldl
+    , mtl
+    , optparse-applicative
+    , pandoc-include-code
+    , parsec
+    , pretty-simple
+    , process
+    , regex-pcre
+    , regex-posix
+    , safe
+    , string-conversions
+    , system-filepath
+    , template-haskell
+    , text
+    , transformers
+    , turtle
+    , unix
+    , unordered-containers
   default-language: Haskell2010

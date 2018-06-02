@@ -32,7 +32,7 @@ hUnitTests :: Test
 hUnitTests = test [
     "testParseSectionHeader"    ~: True ~=? testParseSectionHeader
   , "testParseFileReference"    ~: True ~=? testParseFileReference
-  , "testParseGhci"             ~: True ~=? testParseGhci
+  , "testParseGhci"             ~: testParseGhci
   , "testParseFileSection"      ~: testParseFileSection
   , "testMultiLineXyz"          ~: testMultiLineXyz
   , "testMultiLineXyz2"         ~: testMultiLineXyz2
@@ -66,18 +66,33 @@ testParseFileReference = do
         _ -> error "?"
   and [c1, c2]
 
-testParseGhci :: Bool
-testParseGhci = do
-  let t1 = concat $ intersperse "\\n" [
-            "{{{ghci"
-          , "hmmm"
-          , "hmmm2"
-          , "abcxyz}}}"
-          ]
-  case (TPar.parse parse "" t1) of
-        Right (GHCiReference x Nothing) -> x == "\\nhmmm\\nhmmm2\\nabcxyz"
-        Right (GHCiReference _ n) -> Nothing == n
-        Left e -> error $ show e
+testParseGhci :: Test
+testParseGhci = test
+  [ do
+      let t1 = concat $ intersperse "\\n" [
+                "{{{ghci"
+              , "hmmm"
+              , "hmmm2"
+              , "abcxyz}}}"
+              ]
+      case (TPar.parse parse "" t1) of
+            Right (GHCiReference x Nothing) -> x ~=? "\\nhmmm\\nhmmm2\\nabcxyz"
+            Right (GHCiReference _ n) -> Nothing ~=? n
+            Left e -> error $ show e
+  , do
+      let t1 = [str|### Introducing Side-Effects
+
+{{{ghci eitherLeftOrRight
+:t head
+4 + 4
+}}}
+
+testing123|]
+      case (TPar.parse parse "" t1) of
+            Right (GHCiReference x Nothing) -> x ~=? "\\nhmmm\\nhmmm2\\nabcxyz"
+            Right (GHCiReference _ n) -> Nothing ~=? n
+            Left e -> error $ show e
+  ]
 
 testParseGhci2 :: Bool
 testParseGhci2 = do

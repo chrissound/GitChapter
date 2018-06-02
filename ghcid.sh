@@ -1,1 +1,1 @@
-ghcid '--command=stack ghci app:exe:app' --test='Main.main'
+ghcid '--command=stack ghci gitchapter:exe:gitchapter' --test='Main.main'
