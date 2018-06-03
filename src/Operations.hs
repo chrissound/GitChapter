@@ -74,7 +74,7 @@ instance Operation ShellOutput where
     return $ ShellOutput $ cs z
   render (ShellOutput x) = liftIO (runSh x) >>= pure <$> \case
     (ExitSuccess,t,_) -> Right $ cs t
-    (ExitFailure n,t,e) -> Left $ cs $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
+    (ExitFailure n,t,e) -> Right $ cs $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
 
 
 instance Operation GitCommitOffestReference where
