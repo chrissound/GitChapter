@@ -19,6 +19,7 @@ import Control.Monad.Trans (lift)
 import Turtle (ExitCode(..), shellStrictWithErr, empty)
 import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict (HashMap, lookup)
+import Rainbow 
 
 import GHCiSession
 
@@ -42,16 +43,21 @@ a ++<> b = cs a <> cs b :: Text
 
 runSh :: Text -> IO (ExitCode, Text, Text)
 runSh x = do
-  putStrLn "Running external command: "
-  putStrLn $ "  " ++ convertString x
+  putStrLnInfo ( "Running external command: " :: String)
+  putStrLnInfo $ "  " ++ convertString x
   (r,o,e) <- shellStrictWithErr x empty
   putStrLn $ "  Return: " ++ show r
   case o of
     "" -> pure ()
-    o' -> putStrLn $ "  Output: " ++ show o'
+    o' -> putStrLn $ "  Output: " ++ cs o'
   case e of
     "" -> pure ()
-    e' -> putStrLn $ "  Error: " ++ show e'
+    e' -> putStrLnError $ "  Error: " ++ cs e'
   putStrLn $ ""
   return (r,o,e)
 
+
+putStrLnSuccess, putStrLnError, putStrLnInfo :: Renderable a => a -> IO ()
+putStrLnSuccess x = putChunkLn $ chunk (x) & fore green
+putStrLnError x = putChunkLn $ chunk (x) & fore red
+putStrLnInfo x = putChunkLn $ chunk (x) & fore blue

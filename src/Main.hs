@@ -7,6 +7,7 @@
 module Main where
 
 import Turtle hiding (e, f, header, o, s, x)
+import Hart
 
 import Control.Monad
 import Data.Bool
@@ -44,11 +45,13 @@ work x = do
             (\counter ->
                compileChapter (cs $ show counter) >>= \case
                  Left e -> do
-                   putStrLn $ "Error compiling chapter: " ++ show counter
+                   putStrLnError ("Error compiling chapter: " :: Text)
+                   putStrLnError $ show counter
                    error e
                  Right r -> do
-                   putStrLn $ "Compiled chapter : " ++ show counter
-                   putStrLn $ convertString r)
+                   putStrLnSuccess ("Compiled chapter : " ++ show counter)
+                   putStrLnSuccess ( cs r :: Text)
+            )
 
 rmIfExists :: Turtle.FilePath -> IO ()
 rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())

@@ -1,8 +1,8 @@
--- This file has been generated from package.yaml by hpack version 0.21.2.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 76417ebd705fc2f10a43454f2212c0cf1f155458f0fd6559dbbaeb2c8aefb539
+-- hash: bea7c1a14c7e26084fdd67b336aa60f9cdd048bf4f911d06981bbc8da2deb3da
 
 name:           gitchapter
 version:        0.1.0.0
@@ -47,6 +47,7 @@ executable gitchapter
     , parsec
     , pretty-simple
     , process
+    , rainbow
     , regex-pcre
     , regex-posix
     , safe
@@ -95,6 +96,7 @@ executable test
     , parsec
     , pretty-simple
     , process
+    , rainbow
     , regex-pcre
     , regex-posix
     , safe

@@ -29,6 +29,7 @@ dependencies:
 - pretty-simple
 - pandoc-include-code
 - unordered-containers
+- rainbow
 
 executables:
   gitchapter:
