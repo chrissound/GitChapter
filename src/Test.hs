@@ -80,16 +80,14 @@ testParseGhci = test
             Right (GHCiReference _ n) -> Nothing ~=? n
             Left e -> error $ show e
   , do
-      let t1 = [str|### Introducing Side-Effects
-
-{{{ghci eitherLeftOrRight
+      let t1 = [str|{{{ghci eitherLeftOrRight
 :t head
 4 + 4
 }}}
 
 testing123|]
       case (TPar.parse parse "" t1) of
-            Right (GHCiReference x Nothing) -> x ~=? "\\nhmmm\\nhmmm2\\nabcxyz"
+            Right (GHCiReference x (Just "eitherLeftOrRight")) -> x ~=? ":t head\n4 + 4\n"
             Right (GHCiReference _ n) -> Nothing ~=? n
             Left e -> error $ show e
   ]
