@@ -61,8 +61,7 @@ fileRef z@(FileReference fr fr') = do
 
 instance Operation GitDiffReference where
   parse = do
-    z <- string "{{" >> optional space >> string "gitDiff" >> space >> many (noneOf " ")
-    _ <- many (noneOf "}}")
+    z <- string "{{" >> optional space >> string "gitDiff" >> space >> manyTill anyChar (string " }}" <|> string "}}")
     return $ GitDiffReference $ cs z
   render (GitDiffReference z) = gitDiff z >>= \case
       Right x -> return $ Right $ x

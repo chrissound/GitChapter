@@ -34,6 +34,7 @@ hUnitTests = test [
   , "testParseFileReference"    ~: True ~=? testParseFileReference
   , "testParseGhci"             ~: testParseGhci
   , "testParseFileSection"      ~: testParseFileSection
+  , "testParseGitDiff"          ~: testGitDiff
   , "testMultiLineXyz"          ~: testMultiLineXyz
   , "testMultiLineXyz2"         ~: testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
@@ -203,4 +204,11 @@ testParseFileSection = do
   let input = "{{fileSection src/abc xyz}}"
   case (TPar.parse parse "fileRefTest" input) of
         Right fs -> fs ~=? (FileSection "src/abc" "xyz")
+        Left e -> error $ show e
+
+testGitDiff :: Test
+testGitDiff = do
+  let input = "{{gitDiff src/abc}}"
+  case (TPar.parse parse "fileRefTest" input) of
+        Right fs -> fs ~=? (GitDiffReference "src/abc")
         Left e -> error $ show e
