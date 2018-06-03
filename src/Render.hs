@@ -33,7 +33,9 @@ data PreLineOutput = Raw Text | RefOutput Reference' deriving (Show)
 
 compilePreOutput :: PreLineOutput -> Hart (Either String Text)
 compilePreOutput (Raw x) = return $ Right x
-compilePreOutput (RefOutput (Reference' r)) = render r
+compilePreOutput (RefOutput (Reference' r)) = render r >>= \case
+  Right x -> return $ Right x
+  Left x -> return $ Left $ "compilePreOutput error: " ++ x
 
 shellOutput :: Text -> IO Text
 shellOutput x = runSh x >>= \case

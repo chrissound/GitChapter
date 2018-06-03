@@ -43,7 +43,7 @@ instance Operation FileReference where
       (fPath, Just lStart, Just lEnd) -> return $ FileReference fPath (FileLineRange $ Just (lStart, lEnd))
       (fPath, Nothing, Nothing) -> return $ FileReference fPath (FileLineRange Nothing)
       _ -> fail "Unable to read start and end file reference"
-  render x = liftIO $ maybeToEither "" <$> fileReferenceContent x
+  render x = liftIO $ maybeToEither ( "Unable to read file: " ++ show x) <$> fileReferenceContent x
 
 fileReferenceContent :: FileReference -> IO (Maybe Text)
 fileReferenceContent (FileReference p flRange) =

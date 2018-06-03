@@ -63,18 +63,18 @@ compileChapter filePrefix = do
 renderChapterTemplate :: (ConvertibleStrings t2 String, ConvertibleStrings t3 String, PrintfArg t2, PrintfArg t3, IsString b, Monoid b)
   => Turtle.FilePath -> t3 -> t2 -> Integer -> b -> IO (Either a b)
 renderChapterTemplate fP' cHashPrevious' cHash' sectionKey filePrefix =
-            renderTemplate <$> readTextFile fP' >>= \case
-              Right rendered -> do
-                let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
-                evalStateT
-                  (runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc)
-                  (GitChapterState HM.empty)
-                >>= \case
-                  Right x -> do
-                    appendFile compiledOutput $ cs x
-                    pure $ Right $ "Successful compilation for section " <> filePrefix <> "\n"
-                  Left x -> sectionError sectionKey cHash' cHashPrevious' x
-              Left e -> sectionError sectionKey cHash' cHashPrevious' e
+  renderTemplate <$> readTextFile fP' >>= \case
+    Right rendered -> do
+      let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
+      evalStateT
+        (runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc)
+        (GitChapterState HM.empty)
+      >>= \case
+        Right x -> do
+          appendFile compiledOutput $ cs x
+          pure $ Right $ "Successful compilation for section " <> filePrefix <> "\n"
+        Left e -> sectionError sectionKey cHash' cHashPrevious' ("Render error: " ++ e)
+    Left e -> sectionError sectionKey cHash' cHashPrevious' ("Template error: " ++ e)
 
 sectionError :: (PrintfArg t3, PrintfArg t2, PrintfArg t1) => t1 -> t2 -> t3 -> [Char] -> IO b
 sectionError sk hashPrev hash e = do
