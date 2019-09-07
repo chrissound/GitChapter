@@ -24,24 +24,23 @@ import Hart
 import Safe
 
 
-getSectionHashOffsets :: Integer -> IO (Either String (Text, Turtle.FilePath) )
+getSectionHashOffsets :: Integer -> IO (Either String (CommitRef, Turtle.FilePath) )
 getSectionHashOffsets (-1) = do
   (r, o, _) <- runSh "git rev-list --max-parents=0 HEAD"
   case (r) of
     ExitSuccess -> case (headMay $ lines o) of
       Nothing -> return $ Left "derp"
-      Just v' -> return $ Right (v', "")
+      Just v' -> return $ Right (CommitRef (cs v') [], "")
     _ -> return $ Left "derp"
 getSectionHashOffsets filePrefix = do
   let v = find (prefix $ fromString $ cs articleDir ++ (show filePrefix ++ "_")) (fromString $ cs articleDir)
-  fP <- fold (v) Fold.head
-  case fP of
+  fold (v) Fold.head >>= \case
     Just fP' -> do
       let fP'' = convertString $ encodeString $ fP'
       gitPathCommitHash fP'' >>= \case
-        Just cHash' -> return $ Right (cHash', fP')
+        Just cHash' -> return $ Right (CommitRef (cs cHash') [], fP')
         Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fP''
-    Nothing -> return $ Left $ "No chater file found for chapter " ++ show filePrefix
+    Nothing -> return $ Left $ "No chapter file found for chapter " ++ show filePrefix
 
 compileChapter :: Text -> IO (Either String Text)
 compileChapter filePrefix = do
@@ -51,8 +50,8 @@ compileChapter filePrefix = do
       cHash <- getSectionHashOffsets sectionKey
       case (cHash, cHashPrevious) of
         (Right (cHash', fP'), Right (cHashPrevious', _)) ->
-          gitCheckout cHash' "src/" >>= \case
-            ExitSuccess -> renderChapterTemplate fP' cHashPrevious' cHash' sectionKey filePrefix where
+          gitCheckout (cs $ commitRef cHash') "src/" >>= \case
+            ExitSuccess -> renderChapterTemplate fP' (cHashPrevious') (cHash') sectionKey filePrefix
             _ -> return $ Left ":("
         (Left e, _) -> pure $ Left $ "Unable to determine `from git commit` hash: " ++ e
         (_, Left e) -> pure $ Left $ "Unable to determine `until git commit` hash: " ++ e
@@ -60,12 +59,12 @@ compileChapter filePrefix = do
       print filePrefix
       error "could not read section key index"
 
-renderChapterTemplate :: (ConvertibleStrings t2 String, ConvertibleStrings t3 String, PrintfArg t2, PrintfArg t3, IsString b, Monoid b)
-  => Turtle.FilePath -> t3 -> t2 -> Integer -> b -> IO (Either a b)
+renderChapterTemplate :: (IsString b, Monoid b)
+  => Turtle.FilePath -> CommitRef -> CommitRef -> Integer -> b -> IO (Either a b)
 renderChapterTemplate fP' cHashPrevious' cHash' sectionKey filePrefix =
   renderTemplate <$> readTextFile fP' >>= \case
     Right rendered -> do
-      let  hc = HartConfig (cs cHashPrevious') (cs cHash') sectionKey
+      let  hc = HartConfig (cHashPrevious') (cHash') sectionKey
       evalStateT
         (runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc)
         (GitChapterState HM.empty)
@@ -73,8 +72,9 @@ renderChapterTemplate fP' cHashPrevious' cHash' sectionKey filePrefix =
         Right x -> do
           appendFile compiledOutput $ cs x
           pure $ Right $ "Successful compilation for section " <> filePrefix <> "\n"
-        Left e -> sectionError sectionKey cHash' cHashPrevious' ("Render error: " ++ e)
-    Left e -> sectionError sectionKey cHash' cHashPrevious' ("Template error: " ++ e)
+        Left e -> fError ("Render error: " ++ e)
+    Left e -> fError ("Template error: " ++ e)
+  where fError vv = sectionError sectionKey (commitRef cHash') (commitRef cHashPrevious') vv
 
 sectionError :: (PrintfArg t3, PrintfArg t2, PrintfArg t1) => t1 -> t2 -> t3 -> [Char] -> IO b
 sectionError sk hashPrev hash e = do

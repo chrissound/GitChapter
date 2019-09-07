@@ -19,7 +19,7 @@ gitDiff p = do
         (HartConfig commitStart commitStop _) <- ask
         (r, o, _) <- liftIO . runSh
           $
-          "git diff " ++<> commitStart ++<> ".." ++<> commitStop ++<> " -- \"" ++<> p ++<> "\""
+          "git diff " ++<> commitRef commitStart ++<> ".." ++<> commitRef commitStop ++<> " -- \"" ++<> p ++<> "\""
         case (r) of
           ExitSuccess -> case (length $ lines o) > 0 of
             True -> return $ Right o

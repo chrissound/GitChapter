@@ -23,12 +23,20 @@ import Rainbow
 
 import GHCiSession
 
-data HartConfig = HartConfig String String Integer
+data CommitRef = CommitRef {
+    commitRef :: String
+  , tagsRef :: [String]
+  }
+data HartConfig = HartConfig {
+  fromCommitRef :: CommitRef,
+  toCommitRef :: CommitRef,
+  fuck :: Integer
+  }
 data GitChapterState = GitChapterState (HashMap String GHCiSession)
 
 hartConfigFromHash, hartConfigUntilHash :: HartConfig -> String
-hartConfigFromHash (HartConfig h _ _) = h
-hartConfigUntilHash (HartConfig _ h _) = h
+hartConfigFromHash (HartConfig h _ _) = commitRef h
+hartConfigUntilHash (HartConfig _ h _) = commitRef h
 
 type Hart = ReaderT HartConfig (StateT GitChapterState IO)
 

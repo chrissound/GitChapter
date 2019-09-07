@@ -41,6 +41,7 @@ hUnitTests = test [
   , "testRunGhci"               ~: testGhciRun
   , "testRunGhci2"              ~: testGhciRun2
   , "testRenderTemplate"        ~: testRenderTemplate
+  , "testEscape"                ~: testEscape
   ]
 
 testParseSectionHeader :: Bool
@@ -212,3 +213,11 @@ testGitDiff = do
   case (TPar.parse parse "fileRefTest" input) of
         Right fs -> fs ~=? (GitDiffReference "src/abc")
         Left e -> error $ show e
+
+testEscape :: Test
+testEscape = do
+  let input = "\\{{gitDiff src/abc}}"
+  case (TPar.parse parseSection "???" input) of
+        Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
+        Left e -> error $ show e
+
