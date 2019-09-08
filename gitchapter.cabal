@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bea7c1a14c7e26084fdd67b336aa60f9cdd048bf4f911d06981bbc8da2deb3da
+-- hash: 2fa75378b786f07ef3793dfa33886b8c15fab13f97dc98ac30a113ebff00f38b
 
 name:           gitchapter
 version:        0.1.0.0
@@ -11,13 +13,11 @@ maintainer:     Chris Stryczynski
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 
 executable gitchapter
   main-is: Main.hs
   other-modules:
       BlogLiterately
-      Example
       FileSection
       GHCi
       GHCiSession
@@ -36,7 +36,7 @@ executable gitchapter
   build-depends:
       HUnit
     , QuickCheck
-    , base >=4.9 && <4.11
+    , base >=4.9 && <4.15
     , directory
     , extra
     , filepath
@@ -65,7 +65,6 @@ executable test
   main-is: Test.hs
   other-modules:
       BlogLiterately
-      Example
       FileSection
       GHCi
       GHCiSession
@@ -85,7 +84,7 @@ executable test
   build-depends:
       HUnit
     , QuickCheck
-    , base >=4.9 && <4.11
+    , base >=4.9 && <4.15
     , directory
     , extra
     , filepath

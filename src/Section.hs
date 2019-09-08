@@ -17,6 +17,8 @@ import Filesystem.Path.CurrentOS (encodeString)
 import Text.Regex.Posix
 import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict as HM (empty)
+import Control.Monad.Reader
+import Data.Maybe
 
 import Render
 import Git
@@ -64,17 +66,19 @@ renderChapterTemplate :: (IsString b, Monoid b)
 renderChapterTemplate fP' cHashPrevious' cHash' sectionKey filePrefix =
   renderTemplate <$> readTextFile fP' >>= \case
     Right rendered -> do
-      let  hc = HartConfig (cHashPrevious') (cHash') sectionKey
-      evalStateT
-        (runReaderT ((fmap . fmap) T.unlines $ sequence <$> traverse compilePreOutput rendered) hc)
+      let  hc = HartConfig cHashPrevious' cHash' sectionKey
+      let hmmm = traverse compilePreOutput rendered :: Hart [Either String (Maybe Text)]
+      let fffff = (fmap (T.unlines . catMaybes) . sequence)
+      fffff <$> evalStateT (runReaderT hmmm hc)
         (GitChapterState HM.empty)
       >>= \case
-        Right x -> do
+        Right (x) -> do
           appendFile compiledOutput $ cs x
           pure $ Right $ "Successful compilation for section " <> filePrefix <> "\n"
         Left e -> fError ("Render error: " ++ e)
     Left e -> fError ("Template error: " ++ e)
-  where fError vv = sectionError sectionKey (commitRef cHash') (commitRef cHashPrevious') vv
+  where
+    fError vv = sectionError sectionKey (commitRef cHash') (commitRef cHashPrevious') vv
 
 sectionError :: (PrintfArg t3, PrintfArg t2, PrintfArg t1) => t1 -> t2 -> t3 -> [Char] -> IO b
 sectionError sk hashPrev hash e = do

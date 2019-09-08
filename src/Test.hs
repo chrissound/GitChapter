@@ -35,13 +35,15 @@ hUnitTests = test [
   , "testParseGhci"             ~: testParseGhci
   , "testParseFileSection"      ~: testParseFileSection
   , "testParseGitDiff"          ~: testGitDiff
+  , "testParseShell"            ~: testShell
+  , "testParseShellOutput"      ~: testShellOutput
   , "testMultiLineXyz"          ~: testMultiLineXyz
   , "testMultiLineXyz2"         ~: testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
   , "testRunGhci"               ~: testGhciRun
   , "testRunGhci2"              ~: testGhciRun2
   , "testRenderTemplate"        ~: testRenderTemplate
-  , "testEscape"                ~: testEscape
+  -- , "testEscape"                ~: testEscape
   ]
 
 testParseSectionHeader :: Bool
@@ -214,10 +216,24 @@ testGitDiff = do
         Right fs -> fs ~=? (GitDiffReference "src/abc")
         Left e -> error $ show e
 
-testEscape :: Test
-testEscape = do
-  let input = "\\{{gitDiff src/abc}}"
-  case (TPar.parse parseSection "???" input) of
-        Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
+testShell :: Test
+testShell = do
+  let input = "{{{{shell src/abc}}}}"
+  case (TPar.parse parse "fileRefTest" input) of
+        Right fs -> fs ~=? (Shell "src/abc")
         Left e -> error $ show e
+
+testShellOutput :: Test
+testShellOutput = do
+  let input = "{{{{shell src/abc}}}}"
+  case (TPar.parse parse "fileRefTest" input) of
+        Right fs -> fs ~=? (Shell "src/abc")
+        Left e -> error $ show e
+
+-- testEscape :: Test
+-- testEscape = do
+--   let input = "\\{{gitDiff src/abc}}"
+--   case (TPar.parse parseSection "???" input) of
+--         Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
+--         Left e -> error $ show e
 

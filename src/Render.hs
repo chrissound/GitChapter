@@ -31,11 +31,14 @@ data Reference =
   | GHCiRef GHCiReference deriving (Show, Eq)
 data PreLineOutput = Raw Text | RefOutput Reference' deriving (Show) 
 
-compilePreOutput :: PreLineOutput -> Hart (Either String Text)
-compilePreOutput (Raw x) = return $ Right x
-compilePreOutput (RefOutput (Reference' r)) = render r >>= \case
-  Right x -> return $ Right x
-  Left x -> return $ Left $ "compilePreOutput error: " ++ x
+compilePreOutput :: PreLineOutput -> Hart (Either String (Maybe Text))
+compilePreOutput (Raw x) =
+  return $ Right $ Just x
+compilePreOutput (RefOutput (Reference' r)) =
+  render r >>= \case
+    Right (Just x) -> pure $ Right $ Just x
+    Right (Nothing) -> pure $ Right $ Nothing
+    Left x -> return $ Left $ "compilePreOutput error: " ++ x
 
 shellOutput :: Text -> IO Text
 shellOutput x = runSh x >>= \case
@@ -75,6 +78,7 @@ parseLine x = do
         , Reference' <$> (parse' Ops.parse "git diff tag" xStr :: Maybe GitDiffReference)
         , Reference' <$> (parse' Ops.parse "git commit offset" xStr :: Maybe GitCommitOffestReference)
         , Reference' <$> (parse' Ops.parse "shellOutput tag" xStr :: Maybe ShellOutput)
+        , Reference' <$> (parse' Ops.parse "shell tag" xStr :: Maybe Shell)
         , Reference' <$> (parse' Ops.parse "section header" xStr :: Maybe SectionHeaderReference)
         , Reference' <$> (parse' Ops.parse "ghci reference" $ xStr :: Maybe GHCiReference)
         ]

@@ -28,7 +28,7 @@ import System.IO.Error
 
 class Operation a where
   parse :: Parser a
-  render :: a -> Hart (Either String Text)
+  render :: a -> Hart (Either String (Maybe Text))
 
 data Reference' = forall a. (Operation a, Show a) => Reference' a
 
@@ -43,7 +43,7 @@ instance Operation FileReference where
       (fPath, Just lStart, Just lEnd) -> return $ FileReference fPath (FileLineRange $ Just (lStart, lEnd))
       (fPath, Nothing, Nothing) -> return $ FileReference fPath (FileLineRange Nothing)
       _ -> fail "Unable to read start and end file reference"
-  render x = liftIO $ maybeToEither ( "Unable to read file: " ++ show x) <$> fileReferenceContent x
+  render x = liftIO $ fmap (fmap Just) $ maybeToEither ( "Unable to read file: " ++ show x) <$> fileReferenceContent x
 
 fileReferenceContent :: FileReference -> IO (Maybe Text)
 fileReferenceContent (FileReference p flRange) =
@@ -64,7 +64,7 @@ instance Operation GitDiffReference where
     z <- string "{{" >> optional space >> string "gitDiff" >> space >> manyTill anyChar (string " }}" <|> string "}}")
     return $ GitDiffReference $ cs z
   render (GitDiffReference z) = gitDiff z >>= \case
-      Right x -> return $ Right $ x
+      Right x -> return $ Right $ Just x
       Left x -> return $ Left (printf "Unable to retrieve git diff (%s) -  %s" z (show x))
 
 instance Operation ShellOutput where
@@ -73,9 +73,17 @@ instance Operation ShellOutput where
     _ <- string "}}}"
     return $ ShellOutput $ cs z
   render (ShellOutput x) = liftIO (runSh x) >>= pure <$> \case
-    (ExitSuccess,t,_) -> Right $ cs t
-    (ExitFailure n,t,e) -> Right $ cs $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
+    (ExitSuccess,t,_) -> Right $ Just $ t
+    (ExitFailure n,t,e) -> Right $ Just $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
 
+instance Operation Shell where
+  parse = do
+    z <- string "{{{{" >> optional space >> string "shell" >> space >> many (noneOf "}}}}}")
+    _ <- string "}}}"
+    return $ Shell $ cs z
+  render (Shell x) = liftIO (runSh x) >>= pure <$> \case
+    (ExitSuccess,_,_) -> Right Nothing
+    (ExitFailure n,t,e) -> Left $ cs (("The command failed with exit code (" ++ show n ++ "). ") <> cs t <> cs e)
 
 instance Operation GitCommitOffestReference where
   parse = do
@@ -83,7 +91,7 @@ instance Operation GitCommitOffestReference where
     return GitCommitOffestReference
   render (GitCommitOffestReference) = do
     hc <- ask
-    return $ Right $ cs $ "```\n"
+    return $ Right $ Just $ cs $ "```\n"
       <> "Git From Commit: \n"
       <> hartConfigFromHash hc <> "\n\n"
       <> "Git Until Commit: \n"
@@ -98,12 +106,12 @@ instance Operation SectionHeaderReference where
     return $ SectionHeaderReference s s''
   render (SectionHeaderReference prefix suffix) = do
    (HartConfig _ _ section) <- ask
-   return $ Right $ cs $ prefix ++ "Section " ++ show section ++ suffix
+   return $ Right $ Just $ cs $ prefix ++ "Section " ++ show section ++ suffix
 
 instance Operation GHCiReference where
   parse = (\(x, y) -> GHCiReference x y) <$> (first cs . second (cs <$>)) <$> parseGhciTag
   render (GHCiReference x s) = 
-    (Right . ((<>) "```Haskell\n") . (<> "\n```") )
+    (Right . Just . ((<>) "```Haskell\n") . (<> "\n```") )
     <$>
     ( do
       liftIO $ putStrLn $ "Using GHCI session of: " ++ show s
@@ -136,5 +144,5 @@ instance Operation FileSection where
         section <- getSection (cs s) (Data.Text.lines lns)
         case length $ Data.Text.lines section of
           0 -> return $ Left $ show fs ++ " - FileSection returned no text"
-          _ -> return $ Right section
+          _ -> return $ Right $ Just section
       Left e -> return $ Left e
