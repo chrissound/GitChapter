@@ -85,7 +85,7 @@ sectionError sk hashPrev hash e = do
     putStrLnError ("Hart compilation error!" :: String)
     putStrLnError (printf "Occurred within section: %d" sk :: String)
     putStrLnError ( printf "Occurred within commit range of (%s - %s)" hashPrev hash :: String)
-    error $ show e
+    error $ e
 
 compiledOutput :: Prelude.FilePath
 compiledOutput = "compiledArticle.md"

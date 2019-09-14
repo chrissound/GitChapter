@@ -60,7 +60,7 @@ renderTemplate x =
       case isPossibleRefPresent lns of
         Nothing -> Right $ (\l -> maybe (Raw l) (RefOutput) (parseLine l)) <$> lns
         Just ( PossibleTag t ) -> Left $ "Possible tag found but not recognized: " ++ t
-    Left e -> Left $ cs ("An internal error has occurred (unable to parse sub sections), please report this bug. Unable to parse inner sections within section: " ++ show e)
+    Left e -> Left $ cs ("An internal error has occurred (unable to parse sub sections), please report this bug.\nUnable to parse inner sections within section: \n" ++ show e)
 
 transformInnerSection :: [SectionBlock] -> [Text]
 transformInnerSection ([]) = []

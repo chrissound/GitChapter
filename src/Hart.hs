@@ -54,7 +54,9 @@ runSh x = do
   putStrLnInfo ( "Running external command: " :: String)
   putStrLnInfo $ "  " ++ convertString x
   (r,o,e) <- shellStrictWithErr x empty
-  putStrLn $ "  Return: " ++ show r
+  case r of
+    ExitSuccess -> putStrLnInfo $ "  Return: " ++ show r
+    (ExitFailure _) -> putStrLnError $ "  Return: " ++ show r
   case o of
     "" -> pure ()
     o' -> putStrLn $ "  Output: " ++ cs o'
