@@ -6,19 +6,20 @@
 module Section where
 
 import Text.Printf
-import Turtle hiding (f, e, x, o, s, printf)
+-- import Turtle hiding (f, e, x, o, s, printf, fp)
 --import Filesystem.Path.CurrentOS ( FilePath(FilePath) )
+import System.Exit
+import Data.String (IsString)
 import Data.Text as T (Text, unlines, lines)
 import Data.Monoid ((<>))
 import Prelude hiding (lines)
-import qualified Control.Foldl as Fold
 import Data.String.Conversions
-import Filesystem.Path.CurrentOS (encodeString)
 import Text.Regex.Posix
 import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict as HM (empty)
 import Control.Monad.Reader
 import Data.Maybe
+import Data.List (isInfixOf)
 
 import Render
 import Git
@@ -26,7 +27,7 @@ import Hart
 import Safe
 
 
-getSectionHashOffsets :: Integer -> IO (Either String (CommitRef, Turtle.FilePath) )
+getSectionHashOffsets :: Integer -> IO (Either String (CommitRef, Prelude.FilePath) )
 getSectionHashOffsets (-1) = do
   (r, o, _) <- runSh "git rev-list --max-parents=0 HEAD"
   case (r) of
@@ -35,14 +36,17 @@ getSectionHashOffsets (-1) = do
       Just v' -> return $ Right (CommitRef (cs v') [], "")
     _ -> return $ Left "derp"
 getSectionHashOffsets filePrefix = do
-  let v = find (prefix $ fromString $ cs articleDir ++ (show filePrefix ++ "_")) (fromString $ cs articleDir)
-  fold (v) Fold.head >>= \case
-    Just fP' -> do
-      let fP'' = convertString $ encodeString $ fP'
-      gitPathCommitHash fP'' >>= \case
-        Just cHash' -> return $ Right (CommitRef (cs cHash') [], fP')
-        Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fP''
-    Nothing -> return $ Left $ "No chapter file found for chapter " ++ show filePrefix
+  (r, o, _) <- runSh "git ls-tree -r --name-only master"
+  case (r) of
+    ExitSuccess -> do
+      case filter (isInfixOf $ "chapters/" ++ show filePrefix ++ "_") (cs <$> T.lines o) of
+        [] -> return $ Left $ "No chapter file found for chapter " ++ show filePrefix
+        x -> do
+          let fp = cs $ head x
+          gitPathCommitHash "master" fp >>= \case
+            Just cHash' -> return $ Right (CommitRef (cs cHash') [], head x)
+            Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fp
+    _ -> return $ Left "derp"
 
 compileChapter :: Text -> IO (Either String Text)
 compileChapter filePrefix = do
@@ -52,19 +56,19 @@ compileChapter filePrefix = do
       cHash <- getSectionHashOffsets sectionKey
       case (cHash, cHashPrevious) of
         (Right (cHash', fP'), Right (cHashPrevious', _)) ->
-          gitCheckout (cs $ commitRef cHash') "src/" >>= \case
+          gitCheckout (cs $ commitRef cHash') >>= \case
             ExitSuccess -> renderChapterTemplate fP' (cHashPrevious') (cHash') sectionKey filePrefix
-            _ -> return $ Left ":("
+            _ -> return $ Left "Git checkout failed"
         (Left e, _) -> pure $ Left $ "Unable to determine `from git commit` hash: " ++ e
-        (_, Left e) -> pure $ Left $ "Unable to determine `until git commit` hash: " ++ e
+        (_, Left e) -> pure $ Left $ "Unable to determine `until git commit` hash: \n" ++ e
     Nothing -> do
       print filePrefix
       error "could not read section key index"
 
 renderChapterTemplate :: (IsString b, Monoid b)
-  => Turtle.FilePath -> CommitRef -> CommitRef -> Integer -> b -> IO (Either a b)
+  => Prelude.FilePath -> CommitRef -> CommitRef -> Integer -> b -> IO (Either a b)
 renderChapterTemplate fP' cHashPrevious' cHash' sectionKey filePrefix =
-  renderTemplate <$> readTextFile fP' >>= \case
+  (renderTemplate . cs) <$> (readFile fP') >>= \case
     Right rendered -> do
       let  hc = HartConfig cHashPrevious' cHash' sectionKey
       let hmmm = traverse compilePreOutput rendered :: Hart [Either String (Maybe Text)]

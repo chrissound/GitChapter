@@ -18,23 +18,23 @@ import Data.String.Conversions
 import Hart
 import GitTextPartial
 
-gitCheckout :: Text -> Text -> IO (ExitCode)
-gitCheckout c p = do
-  (r, _, _) <- runSh $ "git checkout " <> c <> " -- " <> p
+gitCheckout :: Text -> IO (ExitCode)
+gitCheckout c = do
+  (r, _, _) <- runSh $ "git checkout " <> c
   return r
 
-gitPathCommitHash :: Text -> IO (Maybe Text)
-gitPathCommitHash x = do
-  (r, o, _) <- runSh $ "git rev-list HEAD -- \"" <> x <> "\""
+gitPathCommitHash :: Text -> Text -> IO (Maybe Text)
+gitPathCommitHash branch x = do
+  (r, o, _) <- runSh $ "git rev-list " <> branch <> " -- \"" <> x <> "\""
   case (r) of
     ExitSuccess -> case (headMay $ lines o) of
       Nothing -> return $ Nothing
       v' -> return $ v'
     _ -> return Nothing
 
-gitLsFiles :: Text -> IO (Maybe [Prelude.FilePath])
-gitLsFiles x = do
-  runSh ( "git ls-files -- " <> x) >>= \case
+gitLsFiles :: Text -> Text -> IO (Maybe [Prelude.FilePath])
+gitLsFiles branch x = do
+  runSh ( "git ls-tree -r --name-only " <> branch <> " -- " <> x) >>= \case
     (ExitSuccess, o, _) -> return . (fmap . fmap) convertString $ return $ lines o
     _ -> return $ Nothing
 
