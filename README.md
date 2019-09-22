@@ -1,7 +1,22 @@
 # GitChapter
 
+Literate programming, Git and reproducibly
+
 ## What problem does this solve?
-Allows you to embed source code, shell output, and various other features within a format agnostic document, some relation to https://en.wikipedia.org/wiki/Literate_programming.
+
+With context of a git commit:
+
+- Allows you to reference source code (this includes showing a 'git diff' of the changed 
+- Orchestrate shell commands and capture their output 
+
+In general:
+
+- Allows you to easily amend 'previous' chapters
+- Generates a tested and reproducible project
+
+### TLDR
+
+Write excellent programming tutorials / blog post, automate copying / pasting, automate screenshots.
 
 ## Project structure 
 
@@ -53,6 +68,7 @@ will run the code within a GHCi session and output the results (thanks to https:
 ## Limitations
 - Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaberation (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
 - Not able to escape tags - so there may be issues if you use text tags like `{{example}}`.
+- You can't arbitrarily embed the tokens tags into any text - they have to be on their own line (cause of my crude Parser implementation! - will be fixed eventually!)
 
 ## Installation
 
@@ -77,3 +93,12 @@ Also using <https://github.com/jgm/pandoc> will allow you to generate HTML from 
 ## Need help?
 As this is a new project, if you hit any issues or need help setting anything up - please don't hesitate to post a Github issue! :smile: 
 
+## Concepts
+
+### Chapter
+
+A single file defined in the `chapters/` directory with an `index` followed by an underscore.
+
+### Chapter offset
+
+Each chapter can reference one or more consecutive git commits. The offset determines the start and end commits.
