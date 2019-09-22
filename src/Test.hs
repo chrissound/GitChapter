@@ -220,14 +220,14 @@ testShell :: Test
 testShell = do
   let input = "{{{{shell src/abc}}}}"
   case (TPar.parse parse "fileRefTest" input) of
-        Right fs -> fs ~=? (Shell "src/abc")
+        Right fs -> fs ~=? (Shell ShellSuccessVoid ShellOutputVoid "src/abc")
         Left e -> error $ show e
 
 testShellOutput :: Test
 testShellOutput = do
-  let input = "{{{{shell src/abc}}}}"
+  let input = "{{{{shellOutput src/abc}}}}"
   case (TPar.parse parse "fileRefTest" input) of
-        Right fs -> fs ~=? (Shell "src/abc")
+        Right fs -> fs ~=? (Shell ShellSuccessVoid ShellOutputVoid "src/abc")
         Left e -> error $ show e
 
 -- testEscape :: Test

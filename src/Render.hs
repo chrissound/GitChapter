@@ -26,7 +26,6 @@ data Reference =
   | GitRef GitDiffReference
   | GitCommitOffestRef GitCommitOffestReference
   | PossibleRef PossibleTag
-  | ShellOutputRef ShellOutput
   | SectionHeaderRef SectionHeaderReference
   | GHCiRef GHCiReference deriving (Show, Eq)
 data PreLineOutput = Raw Text | RefOutput Reference' deriving (Show) 
@@ -77,7 +76,6 @@ parseLine x = do
         , Reference' <$> (parse' Ops.parse "file reference" xStr :: Maybe FileSection)
         , Reference' <$> (parse' Ops.parse "git diff tag" xStr :: Maybe GitDiffReference)
         , Reference' <$> (parse' Ops.parse "git commit offset" xStr :: Maybe GitCommitOffestReference)
-        , Reference' <$> (parse' Ops.parse "shellOutput tag" xStr :: Maybe ShellOutput)
         , Reference' <$> (parse' Ops.parse "shell tag" xStr :: Maybe Shell)
         , Reference' <$> (parse' Ops.parse "section header" xStr :: Maybe SectionHeaderReference)
         , Reference' <$> (parse' Ops.parse "ghci reference" $ xStr :: Maybe GHCiReference)

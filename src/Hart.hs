@@ -52,7 +52,7 @@ a ++<> b = cs a <> cs b :: Text
 runSh :: Text -> IO (ExitCode, Text, Text)
 runSh x = do
   putStrLnInfo ( "Running external command: " :: String)
-  putStrLnInfo $ "  " ++ convertString x
+  putStrLnInfo $ "  " ++ cs x
   (r,o,e) <- shellStrictWithErr x empty
   case r of
     ExitSuccess -> putStrLnInfo $ "  Return: " ++ show r

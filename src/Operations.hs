@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Operations (
   module Operations,
   module Operations.Parsers,
@@ -20,6 +22,7 @@ import Control.Arrow
 import Control.Monad.Trans
 import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict
+import Data.Foldable
 
 import Text.Parsec hiding (parserTrace)
 import Control.Monad.Identity (guard)
@@ -67,23 +70,31 @@ instance Operation GitDiffReference where
       Right x -> return $ Right $ Just x
       Left x -> return $ Left (printf "Unable to retrieve git diff (%s) -  %s" z (show x))
 
-instance Operation ShellOutput where
-  parse = do
-    z <- string "{{{{" >> optional space >> string "shellOutput" >> space >> many (noneOf "}}}}}")
-    _ <- string "}}}"
-    return $ ShellOutput $ cs z
-  render (ShellOutput x) = liftIO (runSh x) >>= pure <$> \case
-    (ExitSuccess,t,_) -> Right $ Just $ t
-    (ExitFailure n,t,e) -> Right $ Just $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
-
 instance Operation Shell where
   parse = do
-    z <- string "{{{{" >> optional space >> string "shell" >> space >> many (noneOf "}}}}}")
-    _ <- string "}}}"
-    return $ Shell $ cs z
-  render (Shell x) = liftIO (runSh x) >>= pure <$> \case
-    (ExitSuccess,_,_) -> Right Nothing
-    (ExitFailure n,t,e) -> Left $ cs (("The command failed with exit code (" ++ show n ++ "). ") <> cs t <> cs e)
+    let f x = (
+          do
+            z <- string "{{{{" >> optional space >> string x >> space >> many (noneOf "}}}}}")
+            _ <- string "}}}"
+            pure z)
+    asum [
+        Text.Parsec.try $
+        f "shell"        >>= pure . Shell ShellSuccessVoid ShellOutputVoid . cs
+      , Text.Parsec.try $
+        f "shellOutput" >>= pure . Shell ShellSuccessRequired ShellOutput' . cs
+      , f "shellSuccess" >>= pure . Shell ShellSuccessRequired ShellOutput' . cs
+      ]
+  render (Shell required output x) =
+    liftIO (runSh x) >>= pure <$> \case
+      (ExitSuccess,v,_) -> Right $
+        case output of
+          ShellOutputVoid -> Nothing
+          ShellOutput' -> Just v
+      (ExitFailure n,t,e) -> do
+        let et = (("The command failed with exit code (" ++ show n ++ "). ") <> cs t <> cs e)
+        case required of
+          ShellSuccessRequired -> Left $ cs et
+          ShellSuccessVoid -> Right $ Just $ cs et
 
 instance Operation GitCommitOffestReference where
   parse = do
@@ -110,7 +121,7 @@ instance Operation SectionHeaderReference where
 
 instance Operation GHCiReference where
   parse = (\(x, y) -> GHCiReference x y) <$> (first cs . second (cs <$>)) <$> parseGhciTag
-  render (GHCiReference x s) = 
+  render (GHCiReference x s) =
     (Right . Just . ((<>) "```Haskell\n") . (<> "\n```") )
     <$>
     ( do
