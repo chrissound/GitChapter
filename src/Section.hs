@@ -30,23 +30,20 @@ import Safe
 getSectionHashOffsets :: Integer -> IO (Either String (CommitRef, Prelude.FilePath) )
 getSectionHashOffsets (-1) = do
   (r, o, _) <- runSh "git rev-list --max-parents=0 HEAD"
-  case (r) of
-    ExitSuccess -> case (headMay $ lines o) of
-      Nothing -> return $ Left "derp"
-      Just v' -> return $ Right (CommitRef (cs v') [], "")
-    _ -> return $ Left "derp"
+  case (r, headMay $ lines o) of
+    (ExitSuccess, Just v') -> pure $ Right (CommitRef (cs v') [], "")
+    _                      -> pure $ Left "derp"
 getSectionHashOffsets filePrefix = do
   (r, o, _) <- runSh "git ls-tree -r --name-only master"
   case (r) of
     ExitSuccess -> do
-      case filter (isInfixOf $ "chapters/" ++ show filePrefix ++ "_") (cs <$> T.lines o) of
-        [] -> return $ Left $ "No chapter file found for chapter " ++ show filePrefix
-        x -> do
-          let fp = cs $ head x
-          gitPathCommitHash "master" fp >>= \case
-            Just cHash' -> return $ Right (CommitRef (cs cHash') [], head x)
-            Nothing -> return $ Left $ convertString $ "Unable to retrieve commit for " <> fp
-    _ -> return $ Left "derp"
+      case (headMay $ filter (isInfixOf $ "chapters/" ++ show filePrefix ++ "_") (cs <$> T.lines o)) of
+        Nothing -> pure $ Left $ "No chapter file found for chapter " ++ show filePrefix
+        Just fp -> do
+          gitPathCommitHash "master" (cs fp) >>= \case
+            Just cHash' -> pure $ Right (CommitRef (cs cHash') [], fp)
+            Nothing     -> pure $ Left $ convertString $ "Unable to retrieve commit for " <> fp
+    _ -> pure $ Left "derp"
 
 compileChapter :: Text -> IO (Either String Text)
 compileChapter filePrefix = do
