@@ -59,3 +59,9 @@ gitTagCommit t c = do
   runSh cmd >>= \case
     (ExitSuccess, _, _) -> pure $ pure ()
     x -> pure $ Left x
+
+gitTagPointsAt :: Text -> IO (Either (RunShReturn) [Text])
+gitTagPointsAt c =
+  runSh ( "git tag --points-at " <> c) >>= \case
+    (ExitSuccess, o, _) -> pure . (fmap . fmap) convertString $ pure $ lines o
+    x -> pure $ Left x

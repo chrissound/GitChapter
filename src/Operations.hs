@@ -103,6 +103,7 @@ instance Operation GitCommitOffestReference where
   render (GitCommitOffestReference) = do
     hc <- ask
     let sct = intercalate "," (fmap cs $ tagsRef $ fromCommitRef hc) :: Text
+    let ect = intercalate "," (fmap cs $ tagsRef $ toCommitRef hc) :: Text
     return $ Right $ Just $ cs $ "```\n"
       <> "Chapter offset\n\n"
       <> "Start Commit: \n"
@@ -111,8 +112,11 @@ instance Operation GitCommitOffestReference where
       <> "Tag(s): "
       <> sct <> "\n"
       <> "-------\n"
-      <> "End commit SHA: \n"
+      <> "End commit: \n"
+      <> "SHA: "
       <> (cs $ commitRef $ toCommitRef hc) <> "\n"
+      <> "Tag(s): "
+      <> ect <> "\n"
       <> "```"
 
 instance Operation SectionHeaderReference where

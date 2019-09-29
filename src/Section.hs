@@ -2,7 +2,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 --{-# OPTIONS -Wno-unused-imports #-}
-{-# OPTIONS -Wno-unused-matches #-}
 module Section where
 
 import Text.Printf
@@ -32,7 +31,11 @@ getSectionHashOffsets :: Integer -> IO (Either String (CommitRef, Prelude.FilePa
 getSectionHashOffsets (-1) = do
   (r, o, _) <- runSh "git rev-list --max-parents=0 HEAD"
   case (r, headMay $ lines o) of
-    (ExitSuccess, Just v') -> pure $ Right (CommitRef (cs v') [], "")
+    (ExitSuccess, Just v') -> do
+      t <- gitTagPointsAt v' >>= \case
+        Right x -> pure x
+        Left _ -> error "derp"
+      pure $ Right (CommitRef (cs v') (fmap cs t), "")
     _                      -> pure $ Left "derp"
 getSectionHashOffsets chapterIndex = do
   (r, o, _) <- runSh "git ls-tree -r --name-only master"
@@ -41,38 +44,55 @@ getSectionHashOffsets chapterIndex = do
       case (headMay $ filter (isInfixOf $ "chapters/" ++ show chapterIndex ++ "_") (cs <$> T.lines o)) of
         Just fp -> do
           gitPathCommitHash "master" (cs fp) >>= \case
-            Just cHash' -> pure $ Right (CommitRef (cs cHash') [], fp)
+            Just cHash' -> do
+              t <- gitTagPointsAt (cHash') >>= \case
+                Right x -> pure x
+                Left _ -> error "derp"
+              pure $ Right (CommitRef (cs cHash') (fmap cs t), fp)
             Nothing     -> pure $ Left $ convertString $ "Unable to retrieve commit for " <> fp
         Nothing -> pure $ Left $ "No chapter file found for chapter " ++ show chapterIndex
     _ -> pure $ Left "derp"
+
+tagChapterOffsets :: (Show a, Eq a, Num a) => a -> CommitRef -> CommitRef -> IO ()
+tagChapterOffsets realChapterIndex cHashPrevious' cHash' = do
+  allCommits <- gitRevList "master" >>= \case
+    Right x -> pure x
+    Left _ -> error "derp"
+  let commitChild x = case (elemIndex x allCommits) of
+        Just x' -> allCommits !! (x' + 1)
+        Nothing -> error "derp"
+  _ <- gitTagCommit
+    ("gch-begin-" <> (cs $ show (realChapterIndex)))
+    (cs $ bool
+      (commitChild $ cs (commitRef cHashPrevious'))
+      (cs $ commitRef cHashPrevious')
+      (realChapterIndex == 1)
+    )
+  _ <- gitTagCommit
+    ("gch-end-" <> (cs $ show (realChapterIndex)))
+    (cs (commitRef cHash'))
+  pure ()
 
 
 compileChapter :: Text -> IO (Either String Text)
 compileChapter filePrefix = do
   _ <- gitCheckout "master"
-  allCommits <- gitRevList "master" >>= \case
-    Right x -> pure x
-    Left e -> error "derp"
-  let commitChild x = case (elemIndex x allCommits) of
-        Just x' -> allCommits !! (x' + 1)
-        Nothing -> error "derp"
   case readMay ( (cs filePrefix :: String) =~ ("([0-9]+)" :: String) ) :: Maybe Integer of
     Just sectionKey -> do
+      cHashPrevious''' <- getSectionHashOffsets $ sectionKey - 1
+      cHash''' <- getSectionHashOffsets sectionKey
+      case (cHash''', cHashPrevious''') of
+        (Right (cHash', _), Right (cHashPrevious', _)) -> do
+          tagChapterOffsets (sectionKey + 1) cHashPrevious' cHash'
+        _ -> error "Unable to tag chapter offset commits"
+      -- Do this again to get the commits with tags...
       cHashPrevious <- getSectionHashOffsets $ sectionKey - 1
       cHash <- getSectionHashOffsets sectionKey
       case (cHash, cHashPrevious) of
         (Right (cHash', fP'), Right (cHashPrevious', _)) -> do
-          let realChapterIndex = sectionKey + 1
-          _ <- gitTagCommit
-            ("gch-begin-" <> (cs $ show (realChapterIndex)))
-            (cs $ bool
-              (commitChild $ cs (commitRef cHashPrevious'))
-              (cs $ commitRef cHashPrevious')
-              (sectionKey == 0)
-            )
-          _ <- gitTagCommit
-            ("gch-end-" <> (cs $ show (realChapterIndex)))
-            (cs (commitRef cHash'))
+          print cHash'
+          print cHashPrevious'
+          tagChapterOffsets (sectionKey + 1) cHashPrevious' cHash'
           gitCheckout (cs $ commitRef cHash') >>= \case
             ExitSuccess -> renderChapterTemplate fP' (cHashPrevious') (cHash') sectionKey filePrefix
             _           -> return $ Left "Git checkout failed"

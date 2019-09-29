@@ -26,7 +26,7 @@ import GHCiSession
 data CommitRef = CommitRef {
     commitRef :: String
   , tagsRef :: [String]
-  }
+  } deriving Show
 data HartConfig = HartConfig {
   fromCommitRef :: CommitRef,
   toCommitRef :: CommitRef,
