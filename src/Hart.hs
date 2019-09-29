@@ -19,7 +19,7 @@ import Control.Monad.Trans (lift)
 import Turtle (ExitCode(..), shellStrictWithErr, empty)
 import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict (HashMap, lookup)
-import Rainbow 
+import Rainbow
 
 import GHCiSession
 
@@ -49,9 +49,11 @@ articleDir = "./chapters/"
   ) => a -> b -> Text
 a ++<> b = cs a <> cs b :: Text
 
-runSh :: Text -> IO (ExitCode, Text, Text)
+type RunShReturn = (ExitCode, Text, Text)
+
+runSh :: Text -> IO (RunShReturn)
 runSh x = do
-  putStrLnInfo ( "Running external command: " :: String)
+  putStrLn ( "Running external command: " :: String)
   putStrLnInfo $ "  " ++ cs x
   (r,o,e) <- shellStrictWithErr x empty
   case r of
