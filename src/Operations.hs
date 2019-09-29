@@ -15,7 +15,7 @@ import Git
 import GHCi
 import Text.Parsec.String
 import Data.Either.Extra
-import Data.Text (lines, unlines)
+import Data.Text (lines, unlines, intercalate)
 import Turtle (ExitCode(..))
 import Text.Printf
 import Control.Arrow
@@ -102,11 +102,17 @@ instance Operation GitCommitOffestReference where
     return GitCommitOffestReference
   render (GitCommitOffestReference) = do
     hc <- ask
+    let sct = intercalate "," (fmap cs $ tagsRef $ fromCommitRef hc) :: Text
     return $ Right $ Just $ cs $ "```\n"
-      <> "Git From Commit: \n"
-      <> hartConfigFromHash hc <> "\n\n"
-      <> "Git Until Commit: \n"
-      <> hartConfigUntilHash hc <> "\n"
+      <> "Chapter offset\n\n"
+      <> "Start Commit: \n"
+      <> "SHA: "
+      <> (cs $ commitRef $ fromCommitRef hc) <> "\n"
+      <> "Tag(s): "
+      <> sct <> "\n"
+      <> "-------\n"
+      <> "End commit SHA: \n"
+      <> (cs $ commitRef $ toCommitRef hc) <> "\n"
       <> "```"
 
 instance Operation SectionHeaderReference where

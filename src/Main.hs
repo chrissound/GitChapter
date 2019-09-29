@@ -36,16 +36,18 @@ work x = do
             show chapters
         Just [] -> error "Found no relevant files within chapters/ within the repository"
         Just chapterFiles -> do
-          putStrLn "Chapter files found:"
-          putStrLn $ "  " ++ show chapters
-          putStrLn ""
+          putStrLnInfo $ ("Chapter files found:" :: Text)
+          mapM_ putStrLn chapters
+          putStrLnInfo $ ("Removing git tags with `gch` prefix:" :: Text)
+          _ <- runSh "git tag | grep \"^gch\" | xargs git tag -d"
+          putStrLn "-------------------------"
           rmIfExists $ fromString compiledOutput
           forM_
             chapterFiles
             (\counter ->
                compileChapter (cs $ show counter) >>= \case
                  Left e -> do
-                   putStrLnError ("Error compiling chapter: " :: Text)
+                   putStrLnError ("Error compiling chapter: \n" :: Text)
                    putStrLnError $ show counter
                    error e
                  Right r -> do

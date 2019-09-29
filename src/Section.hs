@@ -19,43 +19,63 @@ import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict as HM (empty)
 import Control.Monad.Reader
 import Data.Maybe
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, elemIndex)
+import Data.Bool
 
 import Render
 import Git
 import Hart
 import Safe
 
-
+-- returns the inclusive END commit
 getSectionHashOffsets :: Integer -> IO (Either String (CommitRef, Prelude.FilePath) )
 getSectionHashOffsets (-1) = do
   (r, o, _) <- runSh "git rev-list --max-parents=0 HEAD"
   case (r, headMay $ lines o) of
     (ExitSuccess, Just v') -> pure $ Right (CommitRef (cs v') [], "")
     _                      -> pure $ Left "derp"
-getSectionHashOffsets filePrefix = do
+getSectionHashOffsets chapterIndex = do
   (r, o, _) <- runSh "git ls-tree -r --name-only master"
   case (r) of
     ExitSuccess -> do
-      case (headMay $ filter (isInfixOf $ "chapters/" ++ show filePrefix ++ "_") (cs <$> T.lines o)) of
-        Nothing -> pure $ Left $ "No chapter file found for chapter " ++ show filePrefix
+      case (headMay $ filter (isInfixOf $ "chapters/" ++ show chapterIndex ++ "_") (cs <$> T.lines o)) of
         Just fp -> do
           gitPathCommitHash "master" (cs fp) >>= \case
             Just cHash' -> pure $ Right (CommitRef (cs cHash') [], fp)
             Nothing     -> pure $ Left $ convertString $ "Unable to retrieve commit for " <> fp
+        Nothing -> pure $ Left $ "No chapter file found for chapter " ++ show chapterIndex
     _ -> pure $ Left "derp"
+
 
 compileChapter :: Text -> IO (Either String Text)
 compileChapter filePrefix = do
+  _ <- gitCheckout "master"
+  allCommits <- gitRevList "master" >>= \case
+    Right x -> pure x
+    Left e -> error "derp"
+  let commitChild x = case (elemIndex x allCommits) of
+        Just x' -> allCommits !! (x' + 1)
+        Nothing -> error "derp"
   case readMay ( (cs filePrefix :: String) =~ ("([0-9]+)" :: String) ) :: Maybe Integer of
     Just sectionKey -> do
       cHashPrevious <- getSectionHashOffsets $ sectionKey - 1
       cHash <- getSectionHashOffsets sectionKey
       case (cHash, cHashPrevious) of
-        (Right (cHash', fP'), Right (cHashPrevious', _)) ->
+        (Right (cHash', fP'), Right (cHashPrevious', _)) -> do
+          let realChapterIndex = sectionKey + 1
+          _ <- gitTagCommit
+            ("gch-begin-" <> (cs $ show (realChapterIndex)))
+            (cs $ bool
+              (commitChild $ cs (commitRef cHashPrevious'))
+              (cs $ commitRef cHashPrevious')
+              (sectionKey == 0)
+            )
+          _ <- gitTagCommit
+            ("gch-end-" <> (cs $ show (realChapterIndex)))
+            (cs (commitRef cHash'))
           gitCheckout (cs $ commitRef cHash') >>= \case
             ExitSuccess -> renderChapterTemplate fP' (cHashPrevious') (cHash') sectionKey filePrefix
-            _ -> return $ Left "Git checkout failed"
+            _           -> return $ Left "Git checkout failed"
         (Left e, _) -> pure $ Left $ "Unable to determine `from git commit` hash: " ++ e
         (_, Left e) -> pure $ Left $ "Unable to determine `until git commit` hash: \n" ++ e
     Nothing -> do

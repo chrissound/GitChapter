@@ -93,16 +93,6 @@ gitDiff' (GitDiffReference z) = do
 surroundBackTicks :: Text -> Text
 surroundBackTicks v = "```\n" <> v <> "```"
 
-gitCommitRefence :: GitCommitOffestReference -> Hart (Either String Text)
-gitCommitRefence (GitCommitOffestReference) = do
-  hc <- ask
-  return $ Right $ cs $ "```\n"
-    <> "Git From Commit: \n"
-    <> hartConfigFromHash hc <> "\n\n"
-    <> "Git Until Commit: \n"
-    <> hartConfigUntilHash hc <> "\n"
-    <> "```"
-
 printString :: String -> IO ()
 printString = print
 
