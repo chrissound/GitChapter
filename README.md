@@ -66,13 +66,18 @@ will run the code within a GHCi session and output the results (thanks to https:
 
 
 ## Limitations
+- The branch that will be rendered is hardcoded to be `master`
 - Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaberation (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
 - Not able to escape tags - so there may be issues if you use text tags like `{{example}}`.
 - You can't arbitrarily embed the tokens tags into any text - they have to be on their own line (cause of my crude Parser implementation! - will be fixed eventually!)
 
 ## Installation
 
+Either of these should work:
+
     stack install gitchapter:exe:gitchapter
+    nix-env -if default.nix
+    nix-env -if "https://github.com/chrissound/GitChapter/archive/master.tar.gz"
 
 ## How do I create a project that can be rendered?
 Create a `chapters` directory in a git repository. Create a `x_Example.md` file with your relevant commits, where x is a 'chapter' number. You can then render a project by executing:

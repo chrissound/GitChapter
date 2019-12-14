@@ -22,11 +22,14 @@ import System.Directory
 import System.Posix.Directory
 import Text.Regex.Posix
 
+slice :: Int -> Int -> [a] -> [a]
+slice from to xs = take (to - from + 1) (drop from xs)
+
 work :: String -> IO ()
 work x = do
   cd $ fromString x
-  gitLsFiles "chapters/" >>= \case
-    Nothing -> error "git ls-files failure"
+  gitLsFiles "master" "chapters/" >>= \case
+    Nothing -> error "See above ^"
     Just chapters -> do
       let chapterIndexes = getIndexFromChapterFilepath <$> chapters
       case (sequence $ readMay <$> chapterIndexes :: Maybe [Int]) of
@@ -54,6 +57,7 @@ work x = do
                    putStrLnSuccess ("Compiled chapter : " ++ show counter)
                    putStrLnSuccess ( cs r :: Text)
             )
+          gitCheckout "master" >> pure ()
 
 rmIfExists :: Turtle.FilePath -> IO ()
 rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
