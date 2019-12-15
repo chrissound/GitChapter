@@ -6,6 +6,7 @@ variables:
     STACK_ROOT: "${CI_PROJECT_DIR}/.stack-root"
 
 stack-build:
+  stage: stack-build
   image: fpco/stack-build:lts-11.15
   cache:
     key: "$CI_JOB_NAME"
@@ -15,6 +16,7 @@ stack-build:
   script:
     - stack --no-nix --no-terminal build
 nix-build:
+  stage: nix-build
   image: nixos/nix:latest
   cache:
     key: "$CI_JOB_NAME"
