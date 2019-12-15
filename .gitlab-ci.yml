@@ -7,7 +7,7 @@ variables:
 
 stack-build:
   stage: stack-build
-  image: fpco/stack-build:lts-11.15
+  image: fpco/stack-build:lts-13.11
   cache:
     key: "$CI_JOB_NAME"
     paths:
