@@ -6,7 +6,7 @@ Literate programming, Git and reproducibly
 
 With context of a git commit:
 
-- Allows you to reference source code (this includes showing a 'git diff' of the changed 
+- Allows you to reference source code
 - Orchestrate shell commands and capture their output 
 
 In general:
@@ -16,23 +16,21 @@ In general:
 
 ### TLDR
 
-Write excellent programming tutorials / blog post, automate copying / pasting, automate screenshots.
+Write excellent programming tutorials / technical articles / blog posts, automate copying / pasting of commands and output, and automate taking screenshots (or anything really - as long as it can be triggered by a shell command).
 
 ## Project structure 
 
-A chapter file can reference one or more consecutive commits.
+A chapter file can reference one or more consecutive commits, they also need to be 0 indexed.
 
 ```
-Chapter1.md / commit1
-            / commit2
-            / commit3
-Chapter2.md / commit4
-            / commit5
-Chapter3.md / commit6
-            / commit7
+0_Chapter.md / commit1
+             / commit2
+             / commit3
+1_Chapter.md / commit4
+             / commit5
+2_Chapter.md / commit6
+             / commit7
 ```
-
-To modify a previuos chapter / fix a source code error, you would : git rebase, change the code, recompile and render - and that's it!
 
 ## How to modify a previous commit / chapter
 #### Step 1 - checkout the commit you want to modify:
@@ -58,22 +56,24 @@ Force push the repo. Yes a force push is required because we need to overwrite t
 ![demo](demo.png)
 
 ## Similar projects of potential interest
-https://byorgey.wordpress.com/blogliterately/
-http://www.andrevdm.com/posts/2018-02-05-hakyll-code-build-include-compiler.html
-http://howardism.org/Technical/Emacs/literate-devops.html
 
-## Supported tags / features:
+- https://byorgey.wordpress.com/blogliterately/
+- http://www.andrevdm.com/posts/2018-02-05-hakyll-code-build-include-compiler.html
+- http://howardism.org/Technical/Emacs/literate-devops.html
+
+## Supported functionality:
+
 `{{ chapterHeader }}` returns the text `Chapter x` where x is the chapter number.
 
-`{{ gitDiff path/to/file.sh }}` returns  a `git diff` of file.
+`{{ gitDiff path/to/file.sh }}` returns the `git diff` of file.
 
-`{{ file path/to/file.sh }}` returns the entire content of file.
+`{{ file path/to/file.sh }}` returns the content of file.
 
-`{{ fileSection path/to/file.hs main }}` like `file` but returns a section from a file (thanks to https://github.com/owickstrom/pandoc-include-code).
+`{{ fileSection path/to/file.hs main }}` like `file` but returns a section from a file based on comment delimiters (thanks to https://github.com/owickstrom/pandoc-include-code).
 
-`{{ gitCommitOffset }}` returns a special chapter's commit 'range'.
+`{{ gitCommitOffset }}` returns a chapter commit reference
 
-`{{{{ shellOutput command goes here }}}}` which would execute `command goes here` (in your shell) and output whatever is returned.
+`{{{{ shellOutput command goes here }}}}` which would execute `command goes here` (in your shell) return the output (stdout/stderr).
 
 ```
 {{{ghci optionalSessionId
@@ -81,10 +81,11 @@ http://howardism.org/Technical/Emacs/literate-devops.html
 4+4
 }}}
 ```
-will run the code within a GHCi session and output the results (thanks to https://github.com/byorgey/BlogLiterately). The optionalSessionId is a random string you can choose to 'persist' a GHCi process between tags.
+related to Haskell, will run the code within a GHCi session and output the results (thanks to https://github.com/byorgey/BlogLiterately). The optionalSessionId is a random string you can choose to 'persist' a GHCi process between tags.
 
 
 ## Limitations
+
 - The branch that will be rendered is hardcoded to be `master`
 - Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaberation (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
 - Not able to escape tags - so there may be issues if you use text tags like `{{example}}`.
@@ -99,10 +100,16 @@ Either of these should work:
     nix-env -if "https://github.com/chrissound/GitChapter/archive/master.tar.gz"
 
 ## How do I create a project that can be rendered?
-Create a `chapters` directory in a git repository. Create a `x_Example.md` file with your relevant commits, where x is a 'chapter' number (it uses 0 based indexing - the first chapter should be named `0_..`). You can then render a project by executing:
-`gitchapter /path/to/project` - this will generate a `compiledArticle.md` file by compiling the chapters.
 
-Also using <https://github.com/jgm/pandoc> will allow you to generate HTML from markdown with a simple command like:
+#### Step 1 - Create an appropriate repository
+Create a chapter file `chapters/x_Example.md` file with your relevant commits, where `x` is a 'chapter' number (it uses 0 based indexing - the first chapter should be named `0_..`). The chapter file needs to be committed alongside the commits relating to things like source code etc.
+
+#### Step 2 - Render
+You can then render a project by executing:
+`gitchapter /path/to/project` - this will generate a `compiledArticle.md` file by iterating through all commits in the repo, and compiling their associated chapter files.
+
+Note:
+Using <https://github.com/jgm/pandoc> will allow you to generate HTML (or other formats) from markdown with a simple command like:
 `pandoc --from markdown_strict+backtick_code_blocks -s compiledArticle.md -o compiled.html`
 
 ### Example 'GitChapter' projects:
@@ -121,8 +128,8 @@ As this is a new project, if you hit any issues or need help setting anything up
 
 ### Chapter
 
-A single file defined in the `chapters/` directory with an `index` followed by an underscore.
+A single file defined in the `chapters/` directory with an `index` followed by an underscore. I may have referenced this as a "section" previously as well as in source code.
 
-### Chapter offset
+### Chapter commit reference
 
-Each chapter can reference one or more consecutive git commits. The offset determines the start and end commits.
+Each chapter can reference one or more consecutive git commits. The offset determines the start and end commits. Commits will automatically be tagged with `ghc-begin-x` and `ghc-end-x`. This is what allows someone to checkout a commit relating to a specific chapter.
