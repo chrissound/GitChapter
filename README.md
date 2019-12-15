@@ -34,6 +34,25 @@ Chapter3.md / commit6
 
 To modify a previuos chapter / fix a source code error, you would : git rebase, change the code, recompile and render - and that's it!
 
+## How to modify a previous commit / chapter
+#### Step 1 - checkout the commit you want to modify:
+```
+editCommit="commitYouWantToEdit"
+git checkout "$editCommit"
+```
+
+#### Step 2  - make your changes
+
+#### Step 3  - git rebase!
+`git commit -a --amend && git checkout - && git rebase --onto @{-1} "$editCommit"`
+
+#### Step 4 (Optional) fix conflicts
+You'll need to resolve any conflicts as your change propagates through the parent commits.
+
+#### Step 5
+`git push --force`
+Force push the repo. Yes a force push is required because we need to overwrite the "history" of the repo.
+
 ## Diagram / demo illustratino: 
 
 ![demo](demo.png)
@@ -80,8 +99,8 @@ Either of these should work:
     nix-env -if "https://github.com/chrissound/GitChapter/archive/master.tar.gz"
 
 ## How do I create a project that can be rendered?
-Create a `chapters` directory in a git repository. Create a `x_Example.md` file with your relevant commits, where x is a 'chapter' number. You can then render a project by executing:
-`gitchapter /path/to/project` - this will generate a `compiledArticle.md` file from all the chapters.  
+Create a `chapters` directory in a git repository. Create a `x_Example.md` file with your relevant commits, where x is a 'chapter' number (it uses 0 based indexing - the first chapter should be named `0_..`). You can then render a project by executing:
+`gitchapter /path/to/project` - this will generate a `compiledArticle.md` file by compiling the chapters.
 
 Also using <https://github.com/jgm/pandoc> will allow you to generate HTML from markdown with a simple command like:
 `pandoc --from markdown_strict+backtick_code_blocks -s compiledArticle.md -o compiled.html`
