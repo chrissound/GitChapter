@@ -1,0 +1,17 @@
+image: fpco/stack-build:lts-11.15
+
+stages:
+  - build
+  - test
+
+variables:
+    STACK_ROOT: "${CI_PROJECT_DIR}/.stack-root"
+
+build:
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - .stack-work/
+      - .stack-root/
+  script:
+    - stack --no-terminal build
