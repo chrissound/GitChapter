@@ -1,17 +1,24 @@
-image: fpco/stack-build:lts-11.15
-
 stages:
-  - build
-  - test
+  - stack-build
+  - nix-build
 
 variables:
     STACK_ROOT: "${CI_PROJECT_DIR}/.stack-root"
 
-build:
+stack-build:
+  image: fpco/stack-build:lts-11.15
   cache:
     key: "$CI_JOB_NAME"
     paths:
       - .stack-work/
       - .stack-root/
   script:
-    - stack --no-terminal build
+    - stack --no-nix --no-terminal build
+nix-build:
+  image: nixos/nix:latest
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - /nix/store/
+  script:
+    - nix-build 
