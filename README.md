@@ -53,6 +53,8 @@ Force push the repo. Yes a force push is required because we need to overwrite t
 
 ## Diagram / demo illustratino: 
 
+On the left we have the chapter files, on the right is the rendered output in HTML in a browser.
+
 ![demo](demo.png)
 
 ## Similar projects of potential interest
