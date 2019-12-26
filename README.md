@@ -1,5 +1,7 @@
 # GitChapter
 
+https://img.shields.io/gitlab/pipeline/chrissound/GitChapter?style=plastic
+
 Literate programming, Git and reproducibly
 
 ## What problem does this solve?

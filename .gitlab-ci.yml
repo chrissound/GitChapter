@@ -23,4 +23,5 @@ nix-build:
     paths:
       - /nix/store/
   script:
+    - nix-env -i git
     - nix-build 
