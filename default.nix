@@ -15,12 +15,8 @@ let
     overrides = self: super: rec {
       # broken again
       # https://github.com/NixOS/nixpkgs/issues/42073
-      pandoc-include-code  = self.callCabal2nix "pandoc-include-code" (builtins.fetchGit {
-        url = "git@github.com:owickstrom/pandoc-include-code.git";
-        rev = "7e4d9d967ff3e3855a7eae48408c43b3400ae6f4";
-      })
-        {};
-
+      pandoc-include-code  = self.callCabal2nix "pandoc-include-code" (builtins.fetchTarball "https://github.com/owickstrom/pandoc-include-code/archive/7e4d9d967ff3e3855a7eae48408c43b3400ae6f4.tar.gz")
+      {};
     };
   };
 in
