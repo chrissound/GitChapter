@@ -13,7 +13,8 @@ nix-build:
     paths:
       - /nix/store/
   script:
-    - nix-env -i git
+    - nix-env -i git openssh
+    - mkdir -p ~/.ssh/
     - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
     - nix-build 
 stack-build:
