@@ -1,6 +1,6 @@
 # GitChapter
 
-https://img.shields.io/gitlab/pipeline/chrissound/GitChapter?style=plastic
+![cicd build status badge](https://img.shields.io/gitlab/pipeline/chrissound/GitChapter?style=plastic)
 
 Literate programming, Git and reproducibly
 
