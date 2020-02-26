@@ -1,4 +1,4 @@
-# GitChapter
+![gitchapter logo](files/images/logo-small.png)
 
 ![cicd build status badge](https://img.shields.io/gitlab/pipeline/chrissound/GitChapter?style=plastic)
 
