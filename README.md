@@ -53,7 +53,7 @@ You'll need to resolve any conflicts as your change propagates through the paren
 `git push --force`
 Force push the repo. Yes a force push is required because we need to overwrite the "history" of the repo.
 
-## Diagram / demo illustratino: 
+## Diagram / demo illustration: 
 
 On the left we have the chapter files, on the right is the rendered output in HTML in a browser.
 
@@ -91,7 +91,7 @@ related to Haskell, will run the code within a GHCi session and output the resul
 ## Limitations
 
 - The branch that will be rendered is hardcoded to be `master`
-- Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaberation (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
+- Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaboration (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
 - Not able to escape tags - so there may be issues if you use text tags like `{{example}}`.
 - You can't arbitrarily embed the tokens tags into any text - they have to be on their own line (cause of my crude Parser implementation! - will be fixed eventually!)
 
