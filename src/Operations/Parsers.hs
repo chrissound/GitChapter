@@ -25,6 +25,35 @@ data PossibleTag = PossibleTag String deriving (Show, Eq)
 data SectionHeaderReference = SectionHeaderReference String String deriving (Show, Eq)
 data GHCiReference = GHCiReference Text (Maybe Text) deriving (Show, Eq)
 
+parseNumberString :: Parser [Either Int String]
+parseNumberString = do
+  z <- optionMaybe eof 
+  case z of
+    Just () -> pure []
+    Nothing -> do
+      _ <- optional space
+      x <- optionMaybe $ many1 (digit)
+      case (x) of
+        (Just x') -> do
+          y <- parseNumberString
+          pure $ [Left (read x')] ++ y
+        Nothing -> do
+          xx <- many1 letter
+          y <- parseNumberString
+          pure $ [Right xx] ++ y
+
+parseNumberString' :: Parser [String]
+parseNumberString' = do
+  z <- optionMaybe eof 
+  case z of
+    Just () -> pure []
+    Nothing -> do
+      _ <- optional space
+      x <- many1 (digit <|> letter)
+      y <- parseNumberString'
+      pure $ [x] ++ y
+
+
 parseSection :: Parser [SectionBlock]
 parseSection =
   optionMaybe eof >>= \case

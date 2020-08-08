@@ -22,6 +22,8 @@ import GHCi
 import Debug.Trace
 import Operations 
 import Control.Monad.Trans
+import Data.Either
+import Data.Bool
 
 main :: IO ()
 main = do
@@ -36,15 +38,41 @@ hUnitTests = test [
   , "testParseFileSection"      ~: testParseFileSection
   , "testParseGitDiff"          ~: testGitDiff
   , "testParseShell"            ~: testShell
-  , "testParseShellOutput"      ~: testShellOutput
+  -- , "testParseShellOutput"      ~: testShellOutput
   , "testMultiLineXyz"          ~: testMultiLineXyz
   , "testMultiLineXyz2"         ~: testMultiLineXyz2
   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
   , "testRunGhci"               ~: testGhciRun
   , "testRunGhci2"              ~: testGhciRun2
   , "testRenderTemplate"        ~: testRenderTemplate
-  -- , "testEscape"                ~: testEscape
+  , "testEscape"                ~: testEscape
+  , "myHmm"                     ~: testMyHmm
+  , "myHmm2"                    ~: testMyHmm2
   ]
+
+testMyHmm :: Test 
+testMyHmm = do
+  let v =
+        [
+            (""     , Right [])
+          , ("123"  , Right [Left 123])
+          , (" 123"  , Right [Left 123])
+          , (" 123 abc"  , Right [Left 123, Right "abc"])
+          , (" 123 abc456"  , Right [Left 123, Right "abc", Left 456])
+          ]
+  test $ (\v' -> (TPar.parse parseNumberString "testMyHmm" (fst v')) ~=? (snd v')) <$> v
+
+testMyHmm2 :: Test 
+testMyHmm2 = do
+  let v =
+        [
+            (""     , Right [])
+          , ("123 456"  , Right ["123", "456"])
+          , ("123 abc"  , Right ["123", "abc"])
+          , ("xyz 123 abc"  , Right ["xyz", "123", "abc"])
+          , (" 123"  , Right ["123"])
+          ]
+  test $ (\v' -> (TPar.parse parseNumberString' "testMyHmm2" (fst v')) ~?= (snd v')) <$> v
 
 testParseSectionHeader :: Bool
 testParseSectionHeader = do
@@ -223,17 +251,17 @@ testShell = do
         Right fs -> fs ~=? (Shell ShellSuccessVoid ShellOutputVoid "src/abc")
         Left e -> error $ show e
 
-testShellOutput :: Test
-testShellOutput = do
-  let input = "{{{{shellOutput src/abc}}}}"
-  case (TPar.parse parse "fileRefTest" input) of
-        Right fs -> fs ~=? (Shell ShellSuccessVoid ShellOutputVoid "src/abc")
-        Left e -> error $ show e
+-- testShellOutput :: Test
+-- testShellOutput = do
+  -- let input = "{{{{shellOutput src/abc}}}}"
+  -- case (TPar.parse parse "fileRefTest" input) of
+        -- Right fs -> fs ~=? (Shell ShellSuccessRequired ShellOutputVoid "src/abc")
+        -- Left e -> error $ show e
 
--- testEscape :: Test
--- testEscape = do
---   let input = "\\{{gitDiff src/abc}}"
---   case (TPar.parse parseSection "???" input) of
---         Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
---         Left e -> error $ show e
+testEscape :: Test
+testEscape = do
+  let input = "\\{{gitDiff src/abc}}"
+  case (TPar.parse parseSection "???" input) of
+        Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
+        Left e -> error $ show e
 
