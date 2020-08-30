@@ -4,26 +4,39 @@
 module Operations.Parsers where
 
 import Hart
+import qualified Text.Parsec as TPar
+
 
 import Text.Parsec.String
 import Data.Either.Extra
 import Safe
 import Data.Bool
+import qualified Data.Text as Text
+import Operations.Types
 
 import Text.Parsec hiding (parserTrace)
 
-data SectionBlock = SectionRaw Text | SectionGHCi Text (Maybe Text) deriving (Show, Eq)
-data FileLineRange = FileLineRange (Maybe(Int, Int)) deriving (Show, Eq)
-data FileReference = FileReference String FileLineRange deriving (Show, Eq)
-data FileSection = FileSection String String deriving (Show, Eq)
-data GitDiffReference = GitDiffReference Text deriving (Show, Eq)
-data GitCommitOffestReference = GitCommitOffestReference deriving (Show, Eq)
-data Shell = Shell (ShellSuccess) (ShellOutput') Text deriving (Show, Eq)
-data ShellOutput' = ShellOutputVoid | ShellOutput' deriving (Show, Eq)
-data ShellSuccess = ShellSuccessVoid | ShellSuccessRequired deriving (Show, Eq)
-data PossibleTag = PossibleTag String deriving (Show, Eq)
-data SectionHeaderReference = SectionHeaderReference String String deriving (Show, Eq)
-data GHCiReference = GHCiReference Text (Maybe Text) deriving (Show, Eq)
+import Text.Mustache.Parser (parseText, MustacheState)
+-- import Operations.Pending
+import Control.Monad.Identity
+
+import Text.Mustache.Internal.Types (Node(..), DataIdentifier(..))
+
+stringParser :: (Monad m) => ParsecT Text u m a -> ParsecT String u m a
+stringParser p = mkPT $ (\st -> (fmap . fmap . fmap) outReply $ runParsecT p (inState st))
+  where inState :: State String u -> State Text u
+        inState  (State i pos u) = State (Text.pack i) pos u
+        outReply :: Reply Text u a -> Reply String u a
+        outReply (Ok a (State i pos u) e) = Ok a (State (Text.unpack i) pos u) e
+        outReply (Error e) = Error e
+
+-- stringParser' :: (Monad m) => (u -> u2) -> ParsecT s u m a -> ParsecT s u2 m a
+-- stringParser' f p = mkPT $ \st -> (fmap . fmap . fmap) outReply $ runParsecT p (inState st)
+  -- where inState :: State s u -> State s u
+        -- inState  (State i pos u) = State i pos u
+        -- outReply :: Reply s u a -> Reply s (u) a
+        -- outReply (Ok a (State i pos u) e) = Ok a (State i pos (u)) e
+        -- outReply (Error e) = Error e
 
 parseNumberString :: Parser [Either Int String]
 parseNumberString = do
@@ -53,21 +66,36 @@ parseNumberString' = do
       y <- parseNumberString'
       pure $ [x] ++ y
 
+-- abc :: Parsec Text b c -> Parsec String b c
+-- abc = undefined
 
-parseSection :: Parser [SectionBlock]
-parseSection =
-  optionMaybe eof >>= \case
-    Just () -> return []
-    Nothing -> do
-      isGhci <- optionMaybe parseGhciTag
-      block <- case isGhci of
-            Just ghci' -> return $ SectionGHCi ((cs . fst) $ ghci') (((cs <$>) . snd) $ ghci')
-            Nothing -> do
-              manyTill anyToken (lookAhead $ try $ choice [const () <$> parseGhciTag, const () <$> eofString])
-              >>= return . SectionRaw . cs
-      optionMaybe parseSection >>= \case
-        Just sndBlock -> return ( block : sndBlock)
-        Nothing -> return [block]
+parseSection :: ParsecT Text MustacheState Identity [SectionBlock] 
+parseSection = fmap (fmap xyz) parseText
+
+
+-- ParsecT s u Identity
+-- parseSection' :: Monad m => ParsecT Text b m [SectionBlock] 
+-- parseSection' = do
+  -- -- pure []
+  -- -- let s = initState defaultConf
+  -- -- case (runParser parseText s "filepath" "content") of
+    -- -- Right x -> pure undefined
+
+  -- where
+    -- xyz (TextBlock x:_) = [SectionRaw x]
+
+  -- optionMaybe eof >>= \case
+  --   Just () -> return []
+  --   Nothing -> do
+  --     isGhci <- optionMaybe parseGhciTag
+  --     block <- case isGhci of
+  --           Just ghci' -> return $ SectionGHCi ((cs . fst) $ ghci') (((cs <$>) . snd) $ ghci')
+  --           Nothing -> do
+  --             manyTill anyToken (lookAhead $ try $ choice [const () <$> parseGhciTag, const () <$> eofString])
+  --             >>= return . SectionRaw . cs
+  --     optionMaybe parseSection >>= \case
+  --       Just sndBlock -> return ( block : sndBlock)
+  --       Nothing -> return [block]
 
 eofString :: Parser String
 eofString = do
@@ -80,12 +108,11 @@ parserTrace _ = return ()
 parseGhciTag :: Parser (String, (Maybe String))
 parseGhciTag = do
     parserTrace "DEBUG INIT parseGhciTag"
-    _ <- string "{{{" >> optional space >> string "ghci" >> optional (char ' ')
+    _ <- string "ghci" >> optional (char ' ')
     s <- optionMaybe $ try $ manyTill anyToken (endOfLine)
-    z <- many (noneOf "}}}")
-    _ <- string "}}}"
+    z <- many (anyToken)
     parserTrace "DEBUG SUCCESS parseGhciTag"
-    return (z :: String, bool (s) Nothing (s == Just ""))
+    pure (z :: String, bool (s) Nothing (s == Just ""))
 
 parseFileAndLimits :: Parser (String, Maybe Int, Maybe Int)
 parseFileAndLimits = do
@@ -116,3 +143,15 @@ parsePossibleTag :: Parser PossibleTag
 parsePossibleTag = do
   z <- string "{{" >> manyTill anyChar (try $ string "}}")
   return $ PossibleTag z
+
+xyz :: Node Text -> SectionBlock 
+xyz (TextBlock x) = SectionRaw x
+xyz (Variable _ (NamedData x)) =
+  case x of
+    (x':[]) ->
+      case (TPar.parse parseGhciTag "ghci" $ cs x') of
+            Right (s,s') -> SectionGHCi (cs s) (fmap cs s')
+            Left e -> SectionError $ cs $ show e
+            -- _ -> error "?"
+    _ -> error "fuck"
+xyz _ = error "Fuck"

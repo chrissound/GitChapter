@@ -2,23 +2,29 @@
 
 ![cicd build status badge](https://img.shields.io/gitlab/pipeline/chrissound/GitChapter?style=plastic)
 
-Literate programming, Git and reproducibly
+A [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) which combines literate programming, git and reproducibility.
 
 ## What problem does this solve?
 
-With context of a git commit:
+Within the context of a git commit:
 
-- Allows you to reference source code
-- Orchestrate shell commands and capture their output 
+- Allows you to reference source code (example: lines 7-9 from file `example/path/file.txt`)
+- Run shell commands and capture their output 
+- Allows you to easily edit documents - a bit difficult to explain this, for example if you decide to rename a variable, you can just go to the specific commit, modify it, and use native git to propagate the change upwards - and in the end run it again to make sure it all works!)
 
-In general:
+## Vision / Goals
 
-- Allows you to easily amend 'previous' chapters
-- Generates a tested and reproducible project
+I'd love to see a world where we have learning resources/documentation for programmes that can be verifiably run / tested. Or even keep an entire "programming book" up to date with the latest changes.
 
 ### TLDR
 
 Write excellent programming tutorials / technical articles / blog posts, automate copying / pasting of commands and output, and automate taking screenshots (or anything really - as long as it can be triggered by a shell command).
+
+You know where you write a tutorial and you say run this command `sudo whoami`, and then you copy and paste the output? And then you realize that `sudo` isn't installed?  Well how about just automate and verify this with something like:
+
+```
+{{shellOut sudo whoami}}
+```
 
 ## Project structure 
 
@@ -61,9 +67,10 @@ On the left we have the chapter files, on the right is the rendered output in HT
 
 ## Similar projects of potential interest
 
+- https://jupyter.org/
+- http://howardism.org/Technical/Emacs/literate-devops.html
 - https://byorgey.wordpress.com/blogliterately/
 - http://www.andrevdm.com/posts/2018-02-05-hakyll-code-build-include-compiler.html
-- http://howardism.org/Technical/Emacs/literate-devops.html
 
 ## Supported functionality:
 
@@ -92,8 +99,6 @@ related to Haskell, will run the code within a GHCi session and output the resul
 
 - The branch that will be rendered is hardcoded to be `master`
 - Modifying old chapters requires doing a git rebase on that project - which may present some difficulty for the usual git collaberation (as you are basically rewriting git repo history). However changes can be shared by using additional git branches.
-- Not able to escape tags - so there may be issues if you use text tags like `{{example}}`.
-- You can't arbitrarily embed the tokens tags into any text - they have to be on their own line (cause of my crude Parser implementation! - will be fixed eventually!)
 
 ## Installation
 

@@ -8,6 +8,7 @@ import Prelude hiding (lines)
 import Prelude hiding (lines)
 import Control.Exception as Excp
 import System.IO.Error
+import Operations.Types
 
 data GitDiffError = EmptyDiff | Failed | FileDoesNotExist deriving (Show)
 

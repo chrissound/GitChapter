@@ -14,31 +14,19 @@ module Hart
 import Data.Monoid
 import Data.Text hiding (empty)
 import Data.String.Conversions
-import Control.Monad.Trans.Reader (runReaderT, ReaderT, ask)
+import Control.Monad.Trans.Reader (runReaderT, ask)
 import Control.Monad.Trans (lift)
 import Turtle (ExitCode(..), shellStrictWithErr, empty)
-import Control.Monad.Trans.State.Lazy
 import Data.HashMap.Strict (HashMap, lookup)
 import Rainbow
 
 import GHCiSession
-
-data CommitRef = CommitRef {
-    commitRef :: String
-  , tagsRef :: [String]
-  } deriving Show
-data HartConfig = HartConfig {
-  fromCommitRef :: CommitRef,
-  toCommitRef :: CommitRef,
-  fuck :: Integer
-  }
-data GitChapterState = GitChapterState (HashMap String GHCiSession)
+import Operations.Types
 
 hartConfigFromHash, hartConfigUntilHash :: HartConfig -> String
 hartConfigFromHash (HartConfig h _ _) = commitRef h
 hartConfigUntilHash (HartConfig _ h _) = commitRef h
 
-type Hart = ReaderT HartConfig (StateT GitChapterState IO)
 
 articleDir :: Text
 articleDir = "./chapters/"

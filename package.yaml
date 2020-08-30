@@ -30,7 +30,7 @@ dependencies:
 - pandoc-include-code
 - unordered-containers
 - rainbow
-
+- gitchapter-mustache
 executables:
   gitchapter:
     main: Main.hs

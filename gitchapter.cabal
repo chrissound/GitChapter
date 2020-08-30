@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2fa75378b786f07ef3793dfa33886b8c15fab13f97dc98ac30a113ebff00f38b
+-- hash: 54672baf5d47cfe721130d762f4fecb3aca4baca835843b72effea4d60587e5b
 
 name:           gitchapter
 version:        0.1.0.0
@@ -26,6 +26,7 @@ executable gitchapter
       Hart
       Operations
       Operations.Parsers
+      Operations.ParserV2
       QuasiText
       Render
       Section
@@ -41,6 +42,7 @@ executable gitchapter
     , extra
     , filepath
     , foldl
+    , gitchapter-mustache
     , mtl
     , optparse-applicative
     , pandoc-include-code
@@ -74,6 +76,7 @@ executable test
       Main
       Operations
       Operations.Parsers
+      Operations.ParserV2
       QuasiText
       Render
       Section
@@ -89,6 +92,7 @@ executable test
     , extra
     , filepath
     , foldl
+    , gitchapter-mustache
     , mtl
     , optparse-applicative
     , pandoc-include-code

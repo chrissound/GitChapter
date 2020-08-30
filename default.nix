@@ -11,12 +11,15 @@ let
     config = {};
   };
   pkgs = niv.pkgs;
-  myHaskellPackages = pkgs.haskell.packages.${compiler}.override {
+  myHaskellPackages = pkgs.haskellPackages.override {
     overrides = self: super: rec {
       # broken again
       # https://github.com/NixOS/nixpkgs/issues/42073
       pandoc-include-code  = self.callCabal2nix "pandoc-include-code" (builtins.fetchTarball "https://github.com/owickstrom/pandoc-include-code/archive/7e4d9d967ff3e3855a7eae48408c43b3400ae6f4.tar.gz")
       {};
+      pandoc-include-codeabc  = self.callCabal2nix "pandoc-include-code" (builtins.fetchTarball "https://github.com/owickstrom/pandoc-include-code/archive/7e4d9d967ff3e3855a7eae48408c43b3400ae6f4.tar.gz")
+      {};
+      gitchapter-mustache  = self.callCabal2nix "gitchapter-mustache" (/home/chris/NewProjects/mustache) {};
     };
   };
 in

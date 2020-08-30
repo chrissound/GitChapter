@@ -12,11 +12,13 @@ import Data.Text (lines)
 import Data.String.Conversions
 import Turtle (ExitCode(..))
 import Text.Printf
-import Operations hiding (parse)
-import qualified Operations as Ops
+import Operations
+-- import qualified Operations
+import Operations.Types as Ops
 
 import qualified Text.Parsec
 import Data.Foldable
+import Text.Mustache.Parser (emptyState)
 
 import Git
 import Hart
@@ -53,8 +55,9 @@ isPossibleRefPresent lns = asum $
   ) <$> lns
 
 renderTemplate :: Text -> Either String [PreLineOutput]
-renderTemplate x =
-  case transformInnerSection <$> Text.Parsec.parse parseSection "parseSection" (cs x) of
+renderTemplate x = do
+  -- case transformInnerSection <$> z  of
+  case transformInnerSection <$> (Text.Parsec.runParser parseSection emptyState "abcxyz" (cs x)) of
     Right lns -> do
       case isPossibleRefPresent lns of
         Nothing -> Right $ (\l -> maybe (Raw l) (RefOutput) (parseLine l)) <$> lns
@@ -65,6 +68,7 @@ transformInnerSection :: [SectionBlock] -> [Text]
 transformInnerSection ([]) = []
 transformInnerSection (x:xs) = case x of
         SectionRaw b -> Data.Text.lines b ++ (transformInnerSection xs)
+        SectionError b -> error $ cs b
         SectionGHCi b Nothing -> "{{{ghci\n" <> b <> "}}}" : (transformInnerSection xs)
         SectionGHCi b (Just s) -> "{{{ghci " <> s <> "\n" <> b <> "}}}" : (transformInnerSection xs)
 

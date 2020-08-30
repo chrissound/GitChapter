@@ -12,6 +12,8 @@ import Test.QuickCheck
 import Data.Maybe
 import qualified Text.Parsec as TPar
 import qualified Text.Parsec.String
+import qualified Text.Parsec
+import Text.Mustache.Parser (emptyState, initState, defaultConf)
 import Data.List
 import System.IO.Unsafe
 import Text.Pretty.Simple (pPrint)
@@ -24,9 +26,14 @@ import Operations
 import Control.Monad.Trans
 import Data.Either
 import Data.Bool
+import Operations.ParserV2
+import Operations.Types
 
 main :: IO ()
 main = do
+  -- let fp = "/home/chris/Haskell/Harticles/GentleIntroductionToMonadTransformers/chapters/1_Introducing side effects.md"
+  -- fp' <- readFile fp
+  -- xyz fp $ cs fp'
   _ <- runTestTT hUnitTests
   print "Tests completed!"
 
@@ -38,41 +45,42 @@ hUnitTests = test [
   , "testParseFileSection"      ~: testParseFileSection
   , "testParseGitDiff"          ~: testGitDiff
   , "testParseShell"            ~: testShell
-  -- , "testParseShellOutput"      ~: testShellOutput
+  , "testParseShellOutput"      ~: testShellOutput
   , "testMultiLineXyz"          ~: testMultiLineXyz
   , "testMultiLineXyz2"         ~: testMultiLineXyz2
-  , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
+   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
   , "testRunGhci"               ~: testGhciRun
   , "testRunGhci2"              ~: testGhciRun2
   , "testRenderTemplate"        ~: testRenderTemplate
   , "testEscape"                ~: testEscape
-  , "myHmm"                     ~: testMyHmm
-  , "myHmm2"                    ~: testMyHmm2
-  ]
+  -- , "myHmm"                     ~: testMyHmm
+  -- -- , "myHmm2"                    ~: testMyHmm2
+                  ]
+  -- ]
 
-testMyHmm :: Test 
-testMyHmm = do
-  let v =
-        [
-            (""     , Right [])
-          , ("123"  , Right [Left 123])
-          , (" 123"  , Right [Left 123])
-          , (" 123 abc"  , Right [Left 123, Right "abc"])
-          , (" 123 abc456"  , Right [Left 123, Right "abc", Left 456])
-          ]
-  test $ (\v' -> (TPar.parse parseNumberString "testMyHmm" (fst v')) ~=? (snd v')) <$> v
+-- testMyHmm :: Test 
+-- testMyHmm = do
+  -- let v =
+        -- [
+            -- (""     , Right [])
+          -- , ("123"  , Right [Left 123])
+          -- , (" 123"  , Right [Left 123])
+          -- , (" 123 abc"  , Right [Left 123, Right "abc"])
+          -- , (" 123 abc456"  , Right [Left 123, Right "abc", Left 456])
+          -- ]
+  -- test $ (\v' -> (TPar.parse parseNumberString "testMyHmm" (fst v')) ~=? (snd v')) <$> v
 
-testMyHmm2 :: Test 
-testMyHmm2 = do
-  let v =
-        [
-            (""     , Right [])
-          , ("123 456"  , Right ["123", "456"])
-          , ("123 abc"  , Right ["123", "abc"])
-          , ("xyz 123 abc"  , Right ["xyz", "123", "abc"])
-          , (" 123"  , Right ["123"])
-          ]
-  test $ (\v' -> (TPar.parse parseNumberString' "testMyHmm2" (fst v')) ~?= (snd v')) <$> v
+-- testMyHmm2 :: Test 
+-- testMyHmm2 = do
+  -- let v =
+        -- [
+            -- (""     , Right [])
+          -- , ("123 456"  , Right ["123", "456"])
+          -- , ("123 abc"  , Right ["123", "abc"])
+          -- , ("xyz 123 abc"  , Right ["xyz", "123", "abc"])
+          -- , (" 123"  , Right ["123"])
+          -- ]
+  -- test $ (\v' -> (TPar.parse parseNumberString' "testMyHmm2" (fst v')) ~?= (snd v')) <$> v
 
 testParseSectionHeader :: Bool
 testParseSectionHeader = do
@@ -101,27 +109,26 @@ testParseFileReference = do
 testParseGhci :: Test
 testParseGhci = test
   [ do
-      let t1 = concat $ intersperse "\\n" [
-                "{{{ghci"
+      let t1 = concat $ intersperse "\n" [
+                "ghci"
               , "hmmm"
               , "hmmm2"
-              , "abcxyz}}}"
+              , "abcxyz"
               ]
       case (TPar.parse parse "" t1) of
-            Right (GHCiReference x Nothing) -> x ~=? "\\nhmmm\\nhmmm2\\nabcxyz"
+            Right (GHCiReference x Nothing) -> x ~=? "hmmm\nhmmm2\nabcxyz"
             Right (GHCiReference _ n) -> Nothing ~=? n
             Left e -> error $ show e
-  , do
-      let t1 = [str|{{{ghci eitherLeftOrRight
-:t head
-4 + 4
-}}}
+  -- , do
+      -- let t1 = [str|ghci eitherLeftOrRight
+-- :t head
+-- 4 + 4
 
-testing123|]
-      case (TPar.parse parse "" t1) of
-            Right (GHCiReference x (Just "eitherLeftOrRight")) -> x ~=? ":t head\n4 + 4\n"
-            Right (GHCiReference _ n) -> Nothing ~=? n
-            Left e -> error $ show e
+-- testing123|]
+      -- case (TPar.parse parse "" t1) of
+            -- Right (GHCiReference x (Just "eitherLeftOrRight")) -> x ~=? ":t head\n4 + 4\n"
+            -- Right (GHCiReference _ n) -> Nothing ~=? n
+            -- Left e -> error $ show e
   ]
 
 testParseGhci2 :: Bool
@@ -138,34 +145,34 @@ testParseGhci2 = do
 
 testMultiLineXyz :: Test
 testMultiLineXyz = do
-  let t2 = concat $ intersperse "\\n" [
-            "{{{ghci"
-          , "hmmm"
-          , "}}}"
+  let t2 = concat $ intersperse "\n" $ [
+            "{{ghci hello"
+          , "abc"
+          , "xyz"
+          , "}}"
           ]
-  case (TPar.parse parseSection "testMultiLineXyz" t2) of
-        (Right (SectionGHCi x _:[])) -> "\\nhmmm\\n" ~=? x
+  case (runMuParser "testMultiLineXyz1287" $ cs t2) of
+        (Right (x:[])) -> (SectionGHCi "abc\nxyz" (Just "hello")) ~=? x
+        (Right e) -> error $ show e
         (Left e) -> error $ show e
-        (_) -> unsafePerformIO $ do
-          assertFailure "derp"
 
 
 testMultiLineXyz2 :: Test
 testMultiLineXyz2 = do
-  let t2 = concat $ intersperse "\\n" [
+  let t2 = concat $ intersperse "\n" [
             "abcxyz"
-          , "{{{ghci"
+          , "{{ghci"
           , "hmm"
           , "hmm"
-          , "}}}"
+          , "}}"
           , "abcxyz"
           ]
-  case (TPar.parse parseSection "testMultiLineXyz" t2) of
-        (Right (SectionRaw x:SectionGHCi y _:SectionRaw x':[])) -> unsafePerformIO $ do
-          return $ TestList [
-               x ~=? "abcxyz\\n"
-             , x' ~=? "\\nabcxyz"
-             , y ~=? "\\nhmm\\nhmm\\n"
+  case (runMuParser "testMultiLineXyz" $ cs t2) of
+        (Right (x:y:z:[])) -> 
+          TestList [
+               SectionRaw "abcxyz\n" ~=? x
+             , SectionGHCi "hmm\nhmm" Nothing ~=? y 
+             , SectionRaw "\nabcxyz" ~=? z 
              ]
         (Left e) -> hunitFailErr e
         _ -> unsafePerformIO $ do
@@ -185,7 +192,7 @@ testRealWorldSectionBlock = do
            , "Or, abc xyz"
            , "-----------"
            ]
-   case (TPar.parse parseSection "testMultiLineXyz" $ cs t2) of
+   case (runMuParser "testMultiLineXyz" $ cs t2) of
         (Right (SectionRaw x:[])) -> unsafePerformIO $ do
           let expe = cs $ t2
           return $ x == expe
@@ -202,33 +209,31 @@ testGhciRun2 = "ghci> :t head\n      head :: [a] -> a\nghci> :t tail\n      tail
 
 testRenderTemplate :: Test
 testRenderTemplate = do
+
   let input = [str|### Introducing Side-Effects
 
-{{{ghci eitherLeftOrRight
+{{ghci eitherLeftOrRight
 :t head
 4 + 4
-}}}
+}}
 
 testing123|] :: Text
   let sectionExpected = [
           SectionRaw "### Introducing Side-Effects\n\n"
-        , SectionGHCi ":t head\n4 + 4\n" (Just "eitherLeftOrRight")
+        , SectionGHCi ":t head\n4 + 4" (Just "eitherLeftOrRight")
         , SectionRaw "\n\ntesting123"
         ]
-  unsafePerformIO $ case (TPar.parse parseSection "parseSection" $ cs input) of
-    Right sections ->
-      if (sections == sectionExpected) then do
-        let textExpected = [
-                "### Introducing Side-Effects"
-              , ""
-              , "{{{ghci eitherLeftOrRight\n:t head\n4 + 4\n}}}"
-              , ""
-              , ""
-              , "testing123"]
-        return $ textExpected ~=? transformInnerSection sections
-      else do
-        return $ sectionExpected ~=? sections
-    Left e -> return $ hunitFailErr e
+  let x = runMuParser "parseSection" $ cs input
+  test [ x ~=? (Right sectionExpected)
+       ]
+        -- let textExpected = [
+                -- "### Introducing Side-Effects"
+              -- , ""
+              -- , "{{ghci eitherLeftOrRight\n:t head\n4 + 4\n}}"
+              -- , ""
+              -- , ""
+              -- , "testing123"]
+        -- return $ textExpected ~=? transformInnerSection sections
 
 testParseFileSection :: Test
 testParseFileSection = do
@@ -246,22 +251,22 @@ testGitDiff = do
 
 testShell :: Test
 testShell = do
-  let input = "{{{{shell src/abc}}}}"
+  let input = "{{shell src/abc}}"
   case (TPar.parse parse "fileRefTest" input) of
         Right fs -> fs ~=? (Shell ShellSuccessVoid ShellOutputVoid "src/abc")
         Left e -> error $ show e
 
--- testShellOutput :: Test
--- testShellOutput = do
-  -- let input = "{{{{shellOutput src/abc}}}}"
-  -- case (TPar.parse parse "fileRefTest" input) of
-        -- Right fs -> fs ~=? (Shell ShellSuccessRequired ShellOutputVoid "src/abc")
-        -- Left e -> error $ show e
+testShellOutput :: Test
+testShellOutput = do
+  let input = "{{shellOut' src/abc}}"
+  case (TPar.parse parse "fileRefTest" input) of
+        Right fs -> fs ~=? (Shell ShellSuccessRequired ShellOutput' "src/abc")
+        Left e -> error $ show e
 
 testEscape :: Test
 testEscape = do
-  let input = "\\{{gitDiff src/abc}}"
-  case (TPar.parse parseSection "???" input) of
+  let input = "{{={{{ }}}>=}}{{gitDiff src/abc}}"
+  case (runMuParser "???" input) of
         Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
         Left e -> error $ show e
 

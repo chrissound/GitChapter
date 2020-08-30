@@ -20,6 +20,7 @@ import Control.Monad.Reader
 import Data.Maybe
 import Data.List (isInfixOf, elemIndex)
 import Data.Bool
+import Operations.Types
 
 import Render
 import Git
