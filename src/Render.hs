@@ -8,17 +8,16 @@
 module Render where
 
 import Prelude hiding (readFile)
-import Data.Text (lines)
+-- import Data.Text (lines)
 import Data.String.Conversions
 import Turtle (ExitCode(..))
 import Text.Printf
 import Operations
+import Operations.ParserV2
 -- import qualified Operations
 import Operations.Types as Ops
 
-import qualified Text.Parsec
 import Data.Foldable
-import Text.Mustache.Parser (emptyState)
 
 import Git
 import Hart
@@ -30,13 +29,15 @@ data Reference =
   | PossibleRef PossibleTag
   | SectionHeaderRef SectionHeaderReference
   | GHCiRef GHCiReference deriving (Show, Eq)
-data PreLineOutput = Raw Text | RefOutput Reference' deriving (Show) 
+-- data PreLineOutput = Raw Text | RefOutput Reference' |  deriving (Show) 
 
-compilePreOutput :: PreLineOutput -> Hart (Either String (Maybe Text))
-compilePreOutput (Raw x) =
+compilePreOutput :: SectionBlock -> Hart (Either String (Maybe Text))
+compilePreOutput (SectionGHCi _ _) = undefined
+compilePreOutput (SectionError e) = pure $ Left $ cs e
+compilePreOutput (SectionRaw x) =
   return $ Right $ Just x
-compilePreOutput (RefOutput (Reference' r)) =
-  render r >>= \case
+compilePreOutput (SectionAST r) =
+  renderAst r >>= \case
     Right (Just x) -> pure $ Right $ Just x
     Right (Nothing) -> pure $ Right $ Nothing
     Left x -> return $ Left $ "compilePreOutput error: " ++ x
@@ -46,31 +47,27 @@ shellOutput x = runSh x >>= \case
   (ExitSuccess,t,_) -> return t
   (ExitFailure n,t,e) -> return $ cs ("The command failed with exit code (" ++ show n ++ "). ") <> t <> e
 
-isPossibleRefPresent :: (ConvertibleStrings a Text, ConvertibleStrings a String, Functor t, Foldable t) => t a -> Maybe PossibleTag
-isPossibleRefPresent lns = asum $
-  (\x -> (parse' parsePossibleTag "possibleTag" . cs) x
-      >>= (case parseLine $ cs x of
-            Just _ -> const Nothing
-            Nothing -> Just)
-  ) <$> lns
+-- isPossibleRefPresent :: (ConvertibleStrings a Text, ConvertibleStrings a String, Functor t, Foldable t) => t a -> Maybe PossibleTag
+-- isPossibleRefPresent lns = asum $
+  -- (\x -> (parse' parsePossibleTag "possibleTag" . cs) x
+      -- >>= (case parseLine $ cs x of
+            -- Just _ -> const Nothing
+            -- Nothing -> Just)
+  -- ) <$> lns
 
-renderTemplate :: Text -> Either String [PreLineOutput]
-renderTemplate x = do
-  -- case transformInnerSection <$> z  of
-  case transformInnerSection <$> (Text.Parsec.runParser parseSection emptyState "abcxyz" (cs x)) of
-    Right lns -> do
-      case isPossibleRefPresent lns of
-        Nothing -> Right $ (\l -> maybe (Raw l) (RefOutput) (parseLine l)) <$> lns
-        Just ( PossibleTag t ) -> Left $ "Possible tag found but not recognized: " ++ t
+renderTemplate :: Text -> Either String [SectionBlock]
+renderTemplate x = 
+  case (runMuParser "parseSection" (cs x)) of
+    Right lns -> Right lns
     Left e -> Left $ cs ("An internal error has occurred (unable to parse sub sections), please report this bug.\nUnable to parse inner sections within section: \n" ++ show e)
 
-transformInnerSection :: [SectionBlock] -> [Text]
-transformInnerSection ([]) = []
-transformInnerSection (x:xs) = case x of
-        SectionRaw b -> Data.Text.lines b ++ (transformInnerSection xs)
-        SectionError b -> error $ cs b
-        SectionGHCi b Nothing -> "{{{ghci\n" <> b <> "}}}" : (transformInnerSection xs)
-        SectionGHCi b (Just s) -> "{{{ghci " <> s <> "\n" <> b <> "}}}" : (transformInnerSection xs)
+-- transformInnerSection :: [SectionBlock] -> [Text]
+-- transformInnerSection ([]) = []
+-- transformInnerSection (x:xs) = case x of
+        -- SectionRaw b -> Data.Text.lines b ++ (transformInnerSection xs)
+        -- SectionGHCi b Nothing -> "{{{ghci\n" <> b <> "}}}" : (transformInnerSection xs)
+        -- SectionGHCi b (Just s) -> "{{{ghci " <> s <> "\n" <> b <> "}}}" : (transformInnerSection xs)
+        -- SectionError b -> error $ cs b
 
 parseLine :: Text -> Maybe Reference'
 parseLine x = do
@@ -81,7 +78,7 @@ parseLine x = do
         , Reference' <$> (parse' Ops.parse "git diff tag" xStr :: Maybe GitDiffReference)
         , Reference' <$> (parse' Ops.parse "git commit offset" xStr :: Maybe GitCommitOffestReference)
         , Reference' <$> (parse' Ops.parse "shell tag" xStr :: Maybe Shell)
-        , Reference' <$> (parse' Ops.parse "section header" xStr :: Maybe SectionHeaderReference)
+        -- , Reference' <$> (parse' Ops.parse "section header" xStr :: Maybe SectionHeaderReference)
         , Reference' <$> (parse' Ops.parse "ghci reference" $ xStr :: Maybe GHCiReference)
         ]
     of Just z -> Just z

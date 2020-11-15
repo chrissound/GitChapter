@@ -39,20 +39,21 @@ main = do
 
 hUnitTests :: Test
 hUnitTests = test [
-    "testParseSectionHeader"    ~: True ~=? testParseSectionHeader
-  , "testParseFileReference"    ~: True ~=? testParseFileReference
-  , "testParseGhci"             ~: testParseGhci
-  , "testParseFileSection"      ~: testParseFileSection
-  , "testParseGitDiff"          ~: testGitDiff
-  , "testParseShell"            ~: testShell
-  , "testParseShellOutput"      ~: testShellOutput
-  , "testMultiLineXyz"          ~: testMultiLineXyz
-  , "testMultiLineXyz2"         ~: testMultiLineXyz2
-   , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
+    -- "testParseSectionHeader"    ~: True ~=? testParseSectionHeader
+    -- "testParseFileReference"    ~: True ~=? testParseFileReference
+  -- , "testParseGhci"             ~: testParseGhci
+  -- , "testParseFileSection"      ~: testParseFileSection
+   "testParseGitDiff"          ~: testGitDiff
+   -- "testParseShell"            ~: testShell
+  -- , "testParseShellOutput"      ~: testShellOutput
+  -- , "testMultiLineXyz"          ~: testMultiLineXyz
+  -- , "testMultiLineXyz2"         ~: testMultiLineXyz2
+   -- , "testRealWorldSectionBlock" ~: True ~=? testRealWorldSectionBlock
   , "testRunGhci"               ~: testGhciRun
   , "testRunGhci2"              ~: testGhciRun2
-  , "testRenderTemplate"        ~: testRenderTemplate
-  , "testEscape"                ~: testEscape
+  -- , "testRenderTemplate"        ~: testRenderTemplate
+  -- , "testEscape"                ~: testEscape
+  , "testChris"                ~: testChris
   -- , "myHmm"                     ~: testMyHmm
   -- -- , "myHmm2"                    ~: testMyHmm2
                   ]
@@ -82,13 +83,11 @@ hUnitTests = test [
           -- ]
   -- test $ (\v' -> (TPar.parse parseNumberString' "testMyHmm2" (fst v')) ~?= (snd v')) <$> v
 
-testParseSectionHeader :: Bool
-testParseSectionHeader = do
-  let pfx = " test {} "
-  let sfx =  " test {{test}}  "
-  case (TPar.parse parse "secitonHeaderTest" (pfx ++ "{{sectionHeader}}" ++ sfx)) of
-    Right (SectionHeaderReference s s') -> (s == pfx) && (s' == sfx)
-    Left e -> error $ show e
+-- testParseSectionHeader :: Bool
+-- testParseSectionHeader = do
+  -- case (TPar.parse parseSectionHeader "secitonHeaderTest" ("{{sectionHeader}}")) of
+    -- Right (SectionHeaderReference) -> True
+    -- Left e -> error $ show e
 
 
 testParseFileReference :: Bool
@@ -245,8 +244,8 @@ testParseFileSection = do
 testGitDiff :: Test
 testGitDiff = do
   let input = "{{gitDiff src/abc}}"
-  case (TPar.parse parse "fileRefTest" input) of
-        Right fs -> fs ~=? (GitDiffReference "src/abc")
+  case (runMuParser "???" input) of
+        Right fs -> fs ~=? [(SectionAST $ GCASTGitDiffReference $ GitDiffReference "src/abc")]
         Left e -> error $ show e
 
 testShell :: Test
@@ -270,3 +269,9 @@ testEscape = do
         Right fs -> ([SectionRaw "{{gitDiff src/abc}}"]) ~=? fs
         Left e -> error $ show e
 
+testChris :: Test
+testChris = do
+  let input = "# test\n"
+  case (runMuParser "???" input) of
+        Right fs -> ([SectionRaw "# test\n"]) ~=? fs
+        Left e -> error $ show e

@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module Operations.Types where
 
 import Data.Text
@@ -7,7 +8,7 @@ import Control.Monad.Trans.Reader (ReaderT)
 import Control.Monad.Trans.State.Lazy
 import Text.Parsec.String
 
-data SectionBlock = SectionRaw Text | SectionGHCi Text (Maybe Text) | SectionError Text deriving (Show, Eq)
+data SectionBlock = SectionRaw Text | SectionGHCi Text (Maybe Text) | SectionAST GitChapterAST | SectionError Text deriving (Show, Eq)
 data FileLineRange = FileLineRange (Maybe(Int, Int)) deriving (Show, Eq)
 data FileReference = FileReference String FileLineRange deriving (Show, Eq)
 data FileSection = FileSection String String deriving (Show, Eq)
@@ -17,8 +18,27 @@ data Shell = Shell (ShellSuccess) (ShellOutput') Text deriving (Show, Eq)
 data ShellOutput' = ShellOutputVoid | ShellOutput' deriving (Show, Eq)
 data ShellSuccess = ShellSuccessVoid | ShellSuccessRequired deriving (Show, Eq)
 data PossibleTag = PossibleTag String deriving (Show, Eq)
-data SectionHeaderReference = SectionHeaderReference String String deriving (Show, Eq)
+data SectionHeaderReference = SectionHeaderReference deriving (Show, Eq)
 data GHCiReference = GHCiReference Text (Maybe Text) deriving (Show, Eq)
+
+data GitChapterAST =
+    GCASTSectionBlock             SectionBlock
+  | GCASTFileLineRange            FileLineRange            
+  | GCASTFileReference            FileReference            
+  | GCASTFileSection              FileSection
+  | GCASTGitDiffReference         GitDiffReference            
+  | GCASTGitCommitOffestReference GitCommitOffestReference
+  | GCASTShell                    Shell
+  | GCASTPossibleTag              PossibleTag
+  | GCASTSectionHeaderReference   SectionHeaderReference
+  | GCASTGHCiReference            GHCiReference            
+  | GitChapterSectionError        Text
+  deriving (Show, Eq)
+
+data Reference' = forall a. (Operation a, Show a) => Reference' a
+instance Show Reference' where
+  show (Reference' a) = show a
+
 
 data CommitRef = CommitRef {
     commitRef :: String

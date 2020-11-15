@@ -24,6 +24,7 @@ import           Data.Text                      ( lines
 import           Turtle                         ( ExitCode(..) )
 import           Text.Printf
 import           Control.Arrow
+import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.Trans.State.Lazy
 import           Data.HashMap.Strict
@@ -35,17 +36,11 @@ import           Control.Exception             as Excp
 import           System.IO.Error
 import           Operations.Types
 
-data Reference' = forall a. (Operation a, Show a) => Reference' a
-
-instance Show Reference' where
-  show (Reference' a) = show a
-
 
 instance Operation FileReference where
   parse = do
-    z <- between (string "{{" >> optional space >> string "file" >> space)
-                 (string "}}")
-                 parseFileAndLimits
+    void $ string "file"
+    z <- parseFileAndLimits
     case (z) of
       (fPath, Just lStart, Just lEnd) ->
         return $ FileReference fPath (FileLineRange $ Just (lStart, lEnd))
@@ -77,10 +72,8 @@ fileRef z@(FileReference fr fr') = do
 
 instance Operation GitDiffReference where
   parse = do
-    z <- string "{{" >> optional space >> string "gitDiff" >> space >> manyTill
-      anyChar
-      (string " }}" <|> string "}}")
-    return $ GitDiffReference $ cs z
+    z <- string "gitDiff" >> space >> many anyChar
+    pure $ GitDiffReference $ cs z
   render (GitDiffReference z) = gitDiff z >>= \case
     Right x -> return $ Right $ Just x
     Left x ->
@@ -90,10 +83,7 @@ instance Operation Shell where
   parse = do
     let f x =
           (do
-            z <- string "{{" >> optional space >> string x >> space >> many
-              (noneOf "}}")
-            _ <- string "}}"
-            pure z
+            string x >> space >> many anyChar
           )
     asum
       [ Text.Parsec.try
@@ -128,14 +118,7 @@ instance Operation Shell where
         ShellSuccessVoid     -> Right $ Just $ cs et
 
 instance Operation GitCommitOffestReference where
-  parse = do
-    _ <-
-      string "{{"
-      >> optional space
-      >> string "gitCommitOffset"
-      >> optional space
-      >> string "}}"
-    return GitCommitOffestReference
+  parse = string "gitCommitOffset" >> pure GitCommitOffestReference
   render (GitCommitOffestReference) = do
     hc <- ask
     let sct = intercalate "," (fmap cs $ tagsRef $ fromCommitRef hc) :: Text
@@ -165,18 +148,11 @@ instance Operation GitCommitOffestReference where
 
 instance Operation SectionHeaderReference where
   parse = do
-    let sectionHeaderTag =
-          string "{{"
-            >> optional space
-            >> string "sectionHeader"
-            >> optional space
-            >> string "}}"
-    s   <- manyTill anyChar (Text.Parsec.try sectionHeaderTag)
-    s'' <- many anyChar
-    return $ SectionHeaderReference s s''
-  render (SectionHeaderReference prefix suffix) = do
+    void $ string "sectionHeader" <|> string "chapterHeader"
+    pure $ SectionHeaderReference
+  render (SectionHeaderReference) = do
     (HartConfig _ _ section) <- ask
-    return $ Right $ Just $ cs $ prefix ++ "Section " ++ show section ++ suffix
+    return $ Right $ Just $ cs $ "Chapter " ++ show section
 
 instance Operation GHCiReference where
   parse =
@@ -221,3 +197,13 @@ instance Operation FileSection where
           0 -> return $ Left $ show fs ++ " - FileSection returned no text"
           _ -> return $ Right $ Just section
       Left e -> return $ Left e
+
+renderAst :: GitChapterAST -> Hart (Either String (Maybe Text))
+renderAst (GCASTFileReference x) = render x
+renderAst (GCASTFileSection x) = render x
+renderAst (GCASTGitDiffReference x) = render x
+renderAst (GCASTGitCommitOffestReference x) = render x
+renderAst (GCASTShell x) = render x
+renderAst (GCASTSectionHeaderReference x) = render x
+renderAst (GCASTGHCiReference x) = render x
+renderAst _ = undefined

@@ -11,7 +11,8 @@ let
     config = {};
   };
   pkgs = niv.pkgs;
-  myHaskellPackages = pkgs.haskellPackages.override {
+  # myHaskellPackages = pkgs.haskellPackages.override {
+  myHaskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = self: super: rec {
       # broken again
       # https://github.com/NixOS/nixpkgs/issues/42073
