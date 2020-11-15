@@ -49,10 +49,15 @@ runSh x = do
     (ExitFailure _) -> putStrLnError $ "  Return: " ++ show r
   case o of
     "" -> pure ()
-    o' -> putStrLn $ "  Output: " ++ cs o'
+    o' -> do
+      putStrLn $ "  Output: "
+      putStrLn $ cs $ Data.Text.unlines $ ((\l -> "    " <> l) <$> Data.Text.lines (cs o'))
   case e of
     "" -> pure ()
-    e' -> putStrLnError $ "  Error: " ++ cs e'
+    e' -> do
+      putStrLnError ("  Error: " :: String)
+      putStrLnError $ Data.Text.unlines $ ((\l -> "    " <> l) <$> Data.Text.lines (cs e'))
+      -- putStrLnError (cs e' :: String)
   putStrLn $ ""
   return (r,o,e)
 
