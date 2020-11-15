@@ -84,7 +84,24 @@ On the left we have the chapter files, on the right is the rendered output in HT
 
 `{{ gitCommitOffset }}` returns a chapter commit reference
 
-`{{{{ shellOutput command goes here }}}}` which would execute `command goes here` (in your shell) return the output (stdout/stderr).
+### Shell functions
+ 
+Where `...` is the command you want to run
+
+`{{ shell ...}}`
+- continue regardless of the exit status
+
+`{{ shell' ...}}`
+- continue only if it returns success (0 exit code) 
+
+`{{ shellOut ...}}` 
+- show output (stdout / stderr)
+- continue regardless of the exit status
+
+`{{ shellOut' ...}}` 
+- show output (stdout / stderr)
+- continue regardless of the exit status
+
 
 ```
 {{{ghci optionalSessionId
