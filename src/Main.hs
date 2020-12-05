@@ -74,13 +74,13 @@ rmIfExists f = (testfile $ f) >>= boolFlip (rm $ f) (return ())
 
 getIndexFromChapterFilepath :: String -> String
 getIndexFromChapterFilepath x = do
-  let (_, _, _, [v]) =
-        x =~ ("chapters/(.[^_]*)_" :: String) :: ( String
+  case x =~ ("chapters/(.[^_]*)_" :: String) :: ( String
           , String
           , String
           , [String]
-          )
-  v
+          ) of
+    (_, _, _, [v]) -> v
+    _ -> error $ "Chapter does not seem to match regex of chapters/(.[^_]*)_ :" ++ x
 
 main :: IO ()
 main = join . customExecParser (prefs showHelpOnError) $ info
@@ -95,7 +95,7 @@ main = join . customExecParser (prefs showHelpOnError) $ info
     <*>
       many
           (strOption
-            (long "--chapter" <> metavar "STRING" <> help
+            (long "chapter" <> metavar "STRING" <> help
               "path to chapter file"
             )
           )

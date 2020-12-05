@@ -59,7 +59,7 @@ You'll need to resolve any conflicts as your change propagates through the paren
 `git push --force`
 Force push the repo. Yes a force push is required because we need to overwrite the "history" of the repo.
 
-## Diagram / demo illustratino: 
+## Diagram / demo illustration: 
 
 On the left we have the chapter files, on the right is the rendered output in HTML in a browser.
 
