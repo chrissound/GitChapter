@@ -81,27 +81,14 @@ instance Operation GitDiffReference where
 
 instance Operation Shell where
   parse = do
-    let f x =
-          (do
-            string x >> space >> many anyChar
-          )
+    let f x = string x >> space >> many anyChar
+        shelly t v = Text.Parsec.try $ f t >>= pure . v . cs
     asum
-      [ Text.Parsec.try
-      $   f "shell"
-      >>= pure
-      .   Shell ShellSuccessVoid ShellOutputVoid
-      .   cs
-      , Text.Parsec.try
-      $   f "shell'"
-      >>= pure
-      .   Shell ShellSuccessRequired ShellOutput'
-      .   cs
-      , Text.Parsec.try
-      $   f "shellOut"
-      >>= pure
-      .   Shell ShellSuccessVoid ShellOutput'
-      .   cs
-      , f "shellOut'" >>= pure . Shell ShellSuccessRequired ShellOutput' . cs
+      [ 
+        shelly "shell" $ Shell ShellSuccessVoid ShellOutputVoid
+      , shelly "shell'" $ Shell ShellSuccessRequired ShellOutput'
+      , shelly "shellOut" $ Shell ShellSuccessVoid ShellOutput'
+      , shelly "shellOut'" $ Shell ShellSuccessRequired ShellOutput'
       ]
   render (Shell required output x) = liftIO (runSh x) >>= pure <$> \case
     (ExitSuccess, v, _) -> Right $ case output of

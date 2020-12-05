@@ -35,7 +35,7 @@ executables:
   gitchapter:
     main: Main.hs
     source-dirs: src
-  test:
-    main: Test.hs
-    ghc-options: -main-is Test
-    source-dirs: src
+  #test:
+    #main: Test.hs
+    #ghc-options: -main-is Test
+    #source-dirs: src

@@ -31,10 +31,14 @@ import           Text.Regex.Posix
 slice :: Int -> Int -> [a] -> [a]
 slice from to xs = take (to - from + 1) (drop from xs)
 
-work :: String -> IO ()
-work x = do
+work :: String -> [String] -> IO ()
+work x explitChapters = do
   cd $ fromString x
-  gitLsFiles "master" "chapters/" >>= \case
+  chaptersToProcess <-
+    case explitChapters of
+      [] -> gitLsFiles "master" "chapters/"
+      v -> pure $ pure v
+  case chaptersToProcess of
     Nothing       -> error "See above ^"
     Just chapters -> do
       let chapterIndexes = getIndexFromChapterFilepath <$> chapters
@@ -81,12 +85,20 @@ getIndexFromChapterFilepath x = do
 main :: IO ()
 main = join . customExecParser (prefs showHelpOnError) $ info
   (helper <*> parser)
-  (fullDesc <> header "Hart compiler")
+  (fullDesc <> header "GitChapter")
  where
   parser :: Parser (IO ())
-  parser = work <$> argument
+  parser = work
+    <$> argument
     str
-    (metavar "STRING" <> help "the directory of the article project")
+    (metavar "STRING" <> help "the directory of the project")
+    <*>
+      many
+          (strOption
+            (long "--chapter" <> metavar "STRING" <> help
+              "path to chapter file"
+            )
+          )
 
 boolFlip :: a -> a -> Bool -> a
 boolFlip = flip bool

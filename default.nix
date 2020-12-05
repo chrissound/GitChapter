@@ -20,7 +20,10 @@ let
       {};
       pandoc-include-codeabc  = self.callCabal2nix "pandoc-include-code" (builtins.fetchTarball "https://github.com/owickstrom/pandoc-include-code/archive/7e4d9d967ff3e3855a7eae48408c43b3400ae6f4.tar.gz")
       {};
-      gitchapter-mustache  = self.callCabal2nix "gitchapter-mustache" (/home/chris/NewProjects/mustache) {};
+      gitchapter-mustache  = self.callCabal2nix "gitchapter-mustache" (builtins.fetchGit {
+        url = "git@github.com:chrissound/gitchapter-mustache-parser.git";
+        rev = "8ba222fbd357a60317c3d685b79a26cde4338b6d";
+      }) {};
     };
   };
 in
