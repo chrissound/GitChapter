@@ -64,6 +64,7 @@ On the left we have the chapter files, on the right is the rendered output in HT
 - https://byorgey.wordpress.com/blogliterately/
 - http://www.andrevdm.com/posts/2018-02-05-hakyll-code-build-include-compiler.html
 - http://howardism.org/Technical/Emacs/literate-devops.html
+- https://github.com/markm208/storyteller
 
 ## Supported functionality:
 
